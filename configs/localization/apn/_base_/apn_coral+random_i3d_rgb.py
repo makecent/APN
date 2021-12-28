@@ -3,7 +3,8 @@ model = dict(
     type='APN',
     backbone=dict(
         type='ResNet3d_sony',
-        init_cfg=dict(type='Pretrained', checkpoint='checkpoints/r3d_sony/model_rgb.pth', prefix='backbone'),
+        init_cfg=dict(type='Pretrained',
+                      checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_rgb.pth'),
         modality='rgb'),
     cls_head=dict(
         type='APNHead',
