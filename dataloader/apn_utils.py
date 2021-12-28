@@ -210,46 +210,46 @@ def plot_prediction(video_prediction):
     plt.show()
 
 
-def eval_ap(detections, gt_by_cls, iou_range, return_loc_cls=False):
+def eval_ap(detections, gt_by_cls, iou_range, return_decomposed=False):
     """ **** This function is revised from the one with the same name in mmaction2.localization.ssn_utils ****
     Evaluate mean average precisions (mAP) and classification accuracy (Cls. acc.) of the located samples.
     Args:
         detections (dict): Results of detections.
         gt_by_cls (dict): Information of groudtruth.
         iou_range (list or numpy.array): Ranges of iou.
-        return_loc_cls (boolean): Return loc_precision and cls_accuracy if true, which two decompose the mAP.
+        return_decomposed (boolean): Return loc_precision and cls_accuracy if true, which two decompose the mAP.
 
     Returns:
         list: Average precision values of classes at ious.
     """
     ap_values = np.zeros((len(detections), len(iou_range)))
-    cls_accuracy = np.ones((len(detections), len(iou_range)))
-    loc_precision = np.ones(len(iou_range))
+    ap_wi_cls = np.ones((len(detections), len(iou_range)))
+    mAP_wo_cls = np.ones(len(iou_range))
 
     for class_idx in detections.keys():
         tps = []
         for class_idx_x in detections.keys():
-            # compute ap
+            # compute AP of proposals with considering classification, i.e. the normal AP.
             ap, tp = average_precision_at_temporal_iou(gt_by_cls[class_idx_x],
                                                        detections[class_idx],
                                                        iou_range,
                                                        return_tp=True)
             if class_idx_x == class_idx:
                 ap_values[class_idx, :] = ap
-                if not return_loc_cls:
+                if not return_decomposed:
                     break
             tps.append(tp)
         tps = np.stack(tps)
-        if return_loc_cls:
-            # compute cls_accuracy
+        if return_decomposed:
+            # compute AP of proposals (that have been detected w/o classification) with considering classification.
             for iou_idx, min_overlap in enumerate(iou_range):
                 tps_of_iou = tps[:, iou_idx, :]
                 detection_of_cls = detections[class_idx]
                 detection_of_cls_sorted = detection_of_cls[detection_of_cls[:, 4].astype(float).argsort()[::-1]]
                 detections_located = detection_of_cls_sorted[np.where(tps_of_iou.any(axis=0))[0]]
-                cls_accuracy[class_idx, iou_idx] = average_precision_at_temporal_iou(gt_by_cls[class_idx],
-                                                                                     detections_located,
-                                                                                     [min_overlap])
+                ap_wi_cls[class_idx, iou_idx] = average_precision_at_temporal_iou(gt_by_cls[class_idx],
+                                                                                 detections_located,
+                                                                                 [min_overlap])
             # for iou_idx, min_overlap in enumerate(iou_range):
             # tps_of_iou = tps[:, iou_idx, :]
             # tps_of_located = tps_of_iou[:, np.where(tps_of_iou.any(axis=0))[0]]
@@ -257,18 +257,18 @@ def eval_ap(detections, gt_by_cls, iou_range, return_loc_cls=False):
             # if tps_of_located.shape[-1] > 0:
             #     num_cls = np.count_nonzero(tps_of_located[class_idx])
             #     cls_accuracy[class_idx, iou_idx] = num_cls / num_located
-    if return_loc_cls:
-        # compute loc_precision
+    if return_decomposed:
+        # compute mAP of proposals without considering classification
         detections_ignore_cls = list(detections.values())
         detections_ignore_cls = np.vstack(detections_ignore_cls)
         gt_ignore_cls = {}
         for gt_of_cls in gt_by_cls.values():
             for video, gt in gt_of_cls.items():
                 gt_ignore_cls.setdefault(video, []).extend(gt)
-        loc_precision = average_precision_at_temporal_iou(gt_ignore_cls,
-                                                          detections_ignore_cls,
-                                                          iou_range)
-    return (ap_values, loc_precision, cls_accuracy) if return_loc_cls else ap_values
+        mAP_wo_cls = average_precision_at_temporal_iou(gt_ignore_cls,
+                                                      detections_ignore_cls,
+                                                      iou_range)
+    return (ap_values, mAP_wo_cls, ap_wi_cls) if return_decomposed else ap_values
 
 
 def average_precision_at_temporal_iou(ground_truth,

@@ -314,18 +314,18 @@ class APNDataset(Dataset):
                     print_log(f"\nwriting detection results to {dump_detections}", logger=logger)
                     dump(detections, dump_detections)
                 iou_range = np.arange(0.1, 1.0, .1)
-                ap_values, loc_pre, cls_acc = eval_ap(detections, self.gt_infos, iou_range, return_loc_cls=True)
+                ap_values, mAP_wo_cls, ap_wi_cls = eval_ap(detections, self.gt_infos, iou_range, return_decomposed=True)
                 mAP = ap_values.mean(axis=0)
-                cls_acc = cls_acc.mean(axis=0)
+                mAP_wi_cls = ap_wi_cls.mean(axis=0)
                 for iou, mAP_iou in zip(iou_range, mAP):
                     eval_results = self.update_and_print_eval(eval_results, mAP_iou,
                                                               f'mAP@{iou:.01f}', logger)
-                for iou, pre_iou in zip(iou_range, loc_pre):
+                for iou, pre_iou in zip(iou_range, mAP_wo_cls):
                     eval_results = self.update_and_print_eval(eval_results, pre_iou,
-                                                              f'loc_pre@{iou:.01f}', logger)
-                for iou, acc_iou in zip(iou_range, cls_acc):
+                                                              f'wo_cls@{iou:.01f}', logger)
+                for iou, acc_iou in zip(iou_range, mAP_wi_cls):
                     eval_results = self.update_and_print_eval(eval_results, acc_iou,
-                                                              f'cls_acc@{iou:.01f}', logger)
+                                                              f'wi_cls@{iou:.01f}', logger)
                 dump_evaluation = metric_options.get('mAP', {}).get('dump_evaluation', False)
                 if dump_evaluation:
                     print_log(f"\nwriting evaluation results to {dump_evaluation}", logger=logger)

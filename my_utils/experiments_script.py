@@ -26,17 +26,18 @@ def evaluate_detections(cfg_file="configs/localization/apn/apn_coral_r3dsony_16x
         dump(detections, detections_file)
     detections = dict(sorted(detections.items()))
     iou_range = np.arange(0.1, 1.0, .1)
-    ap_values, loc_acc, cls_acc = eval_ap(detections, ds.gt_infos, iou_range, return_loc_cls=True)
+    ap_values, mAP_wo_cls, ap_wi_cls = eval_ap(detections, ds.gt_infos, iou_range, return_decomposed=True)
     mAP = ap_values.mean(axis=0)
-    cls_acc = cls_acc.mean(axis=0)
+    mAP_wi_cls = ap_wi_cls.mean(axis=0)
     for iou, mAP_iou in zip(iou_range, mAP):
-        eval_results = ds.update_and_print_eval(eval_results, mAP_iou, f'mAP@{iou:.01f}')
-    print('\n\n')
-    for iou, loc_iou in zip(iou_range, loc_acc):
-        eval_results = ds.update_and_print_eval(eval_results, loc_iou, f'loc_pre@{iou:.01f}')
-    print('\n\n')
-    for iou, cls_iou in zip(iou_range, cls_acc):
-        eval_results = ds.update_and_print_eval(eval_results, cls_iou, f'cls_acc@{iou:.01f}')
+        eval_results = ds.update_and_print_eval(eval_results, mAP_iou,
+                                                f'mAP@{iou:.01f}')
+    for iou, pre_iou in zip(iou_range, mAP_wo_cls):
+        eval_results = ds.update_and_print_eval(eval_results, pre_iou,
+                                                f'wo_cls@{iou:.01f}')
+    for iou, acc_iou in zip(iou_range, mAP_wi_cls):
+        eval_results = ds.update_and_print_eval(eval_results, acc_iou,
+                                                f'wi_cls@{iou:.01f}')
 
 
 evaluate_detections()
@@ -140,8 +141,8 @@ def mean_fusion():
                      results_file=f'{save_dir}/mean_fuse/mean_progressions.pkl',
                      metric_options_override=dict(
                          mAP=dict(
-                            dump_detections=f'{save_dir}/mean_fuse/rgb+flow_detections.pkl',
-                            dump_evaluation=f'{save_dir}/mean_fuse/rgb+flow_evaluation.json')))
+                             dump_detections=f'{save_dir}/mean_fuse/rgb+flow_detections.pkl',
+                             dump_evaluation=f'{save_dir}/mean_fuse/rgb+flow_evaluation.json')))
 # mean_fusion()
 
 
