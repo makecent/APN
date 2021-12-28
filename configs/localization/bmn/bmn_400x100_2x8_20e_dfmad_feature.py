@@ -103,4 +103,4 @@ work_dir = './work_dirs/bmn_400x100_2x8_20e_dfmad_feature/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json', output_format='json')
+output_config = dict(out=f'{work_dir}/progressions.pkl', output_format='json')

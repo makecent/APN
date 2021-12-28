@@ -45,8 +45,8 @@ model = dict(
     test_cfg=test_cfg)
 # dataset settings
 dataset_type = 'SSNDataset'
-data_root_test = 'my_data/DFMAD-70/Images/test'
-ann_file_test = 'my_data/DFMAD-70/proposals/dfmad_bmn_test_100_proposal_list.txt'
+data_root_test = 'my_data/dfmad70/rawframes/resized_test'
+ann_file_test = 'my_data/dfmad70/proposals/dfmad_bmn_test_200_proposal_list.txt'
 img_norm_cfg = dict(mean=[104, 117, 128], std=[1, 1, 1], to_bgr=True)
 test_pipeline = [
     dict(
@@ -101,7 +101,7 @@ log_config = dict(interval=25, hooks=[dict(type='TensorboardLoggerHook'), dict(t
 total_epochs = 450
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/ssn_r50_1x5_450e_dfmad_rgb'
+work_dir = './work_dirs/ssn_bmn200_r50_450e_dfmad_rgb'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]

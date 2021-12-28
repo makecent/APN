@@ -19,4 +19,4 @@ echo "RGB inference finished"
 echo "Testing on FLOW checkpoint: ..."
 PYTHONPATH=$PWD:$PYTHONPATH mim test mmaction $FLOW_CONFIG --gpus $GPU --launcher pytorch --checkpoint $FLOW_CHECKPOINT --out "results.pkl" --eval mAP ${@:6}
 echo "FLOW inference finished"
-python utils/evaluate_two_stream.py --rgb_result $RGB_RESULT --flow-result $FLOW_RESULT
+python my_utils/evaluate_two_stream.py --rgb_result $RGB_RESULT --flow-result $FLOW_RESULT

@@ -2,7 +2,7 @@ import math
 import os
 import torch
 import numpy as np
-from mmcv.runner import load_checkpoint
+from mmcv.runner import load_checkpoint, BaseModule
 from mmaction.models.builder import BACKBONES
 from mmaction.utils import get_root_logger
 
@@ -192,15 +192,14 @@ class Mixed(torch.nn.Module):
 
 
 @BACKBONES.register_module()
-class ResNet3d_sony(torch.nn.Module):
+class ResNet3d_sony(BaseModule):
     def __init__(self,
-                 pretrained=None,
                  modality='rgb',
-                 name='inception'):
-        super(ResNet3d_sony, self).__init__()
+                 name='inception',
+                 **kwargs):
+        super(ResNet3d_sony, self).__init__(**kwargs)
 
         self.name = name
-        self.pretrained = pretrained
         if modality == 'rgb':
             in_channels = 3
         elif modality == 'flow':
@@ -286,18 +285,18 @@ class ResNet3d_sony(torch.nn.Module):
         # out = self.softmax(out_logits)
         return out
 
-    def init_weights(self):
-        """Initiate the parameters either from existing checkpoint or from
-        scratch."""
-        if isinstance(self.pretrained, str):
-            logger = get_root_logger()
-            logger.info(f'load model from: {self.pretrained}')
-            load_checkpoint(self, self.pretrained, strict=False, logger=logger)
-
-        elif self.pretrained is None:
-            pass
-        else:
-            raise TypeError('pretrained must be a str or None')
+    # def init_weights(self):
+    #     """Initiate the parameters either from existing checkpoint or from
+    #     scratch."""
+    #     if isinstance(self.pretrained, str):
+    #         logger = get_root_logger()
+    #         logger.info(f'load model from: {self.pretrained}')
+    #         load_checkpoint(self, self.pretrained, strict=False, logger=logger)
+    #
+    #     elif self.pretrained is None:
+    #         pass
+    #     else:
+    #         raise TypeError('pretrained must be a str or None')
 
     def load_tf_weights(self, sess):
         state_dict = {}

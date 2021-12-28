@@ -117,4 +117,4 @@ work_dir = './work_dirs/apn_coral2_r3dsony_32x4_10e_dfmad_rgb/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

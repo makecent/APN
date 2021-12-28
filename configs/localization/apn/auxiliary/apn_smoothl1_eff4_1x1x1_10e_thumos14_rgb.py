@@ -26,8 +26,8 @@ model = dict(
 dataset_type = 'APNDataset'
 data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
 data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = ('my_data/thumos14/annotations/apn/apn_train.csv', 'my_data/thumos14/annotations/apn/apn_val.csv')
+ann_file_val = 'my_data/thumos14/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 
@@ -103,4 +103,4 @@ work_dir = './work_dirs/apn_smoothl1_eff4_1x1x1_10e_thumos14_rgb/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

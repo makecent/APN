@@ -1,10 +1,12 @@
 _base_ = [
-    './_base_/models/apn_threshold_i3d.py', './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
+    './_base_/apn_coral+random_i3d_rgb.py', './_base_/Adam_10e.py', './_base_/default_runtime.py'
 ]
 
 # Change defaults
-model = dict(backbone=dict(pretrained='checkpoints/r3d_sony/model_flow.pth', modality='flow'))
-# # input configuration
+model = dict(backbone=dict(pretrained='checkpoints/r3d_sony/model_flow.pth', modality='flow'),
+             cls_head=dict(loss=dict(type='ApnMAELoss')))
+
+# input configuration
 clip_len = 32
 frame_interval = 4
 
@@ -12,15 +14,14 @@ frame_interval = 4
 dataset_type = 'APNDataset'
 data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
 data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = ('my_data/thumos14/apn_train.csv', 'my_data/thumos14/annotations/apn/apn_val.csv')
+ann_file_val = 'my_data/thumos14/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128], std=[128, 128], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
@@ -31,7 +32,6 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
@@ -50,7 +50,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=10,
+    videos_per_gpu=8,
     workers_per_gpu=8,
     train=dict(
         type=dataset_type,
@@ -59,6 +59,7 @@ data = dict(
         data_prefixes=data_root_train,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
+        unittest=False
     ),
     val=dict(
         type=dataset_type,
@@ -67,6 +68,7 @@ data = dict(
         data_prefixes=data_root_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
+        unittest=False
     ),
     test=dict(
         type=dataset_type,
@@ -75,8 +77,9 @@ data = dict(
         data_prefixes=data_root_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
+        untrimmed=True
     ))
 
 # output settings
-work_dir = './work_dirs/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow/'
-output_config = dict(out=f'{work_dir}/results.json')
+work_dir = './work_dirs/apn_mae+random_r3dsony_32x4_10e_thumos14_flow/'
+output_config = dict(out=f'{work_dir}/progressions.pkl')

@@ -92,7 +92,7 @@ lr_config = dict(policy='fixed')
 total_epochs = 10
 
 # evaluation
-evaluation = dict(interval=1, save_best='mae', metrics=['loss', 'mae', 'framecls_top_k_accuracy_based_on_apn', 'framecls_mean_class_accuracy_based_on_apn'], dataset_name='Val')
+evaluation = dict(interval=1, save_best='MAE', metrics=['loss', 'MAE', 'framecls_top_k_accuracy_based_on_apn', 'framecls_mean_class_accuracy_based_on_apn'], dataset_name='Val')
 
 # others
 checkpoint_config = dict(interval=1)

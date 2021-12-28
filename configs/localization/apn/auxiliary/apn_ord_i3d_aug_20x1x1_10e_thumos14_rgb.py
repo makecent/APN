@@ -28,8 +28,8 @@ test_cfg = None
 dataset_type = 'APNDataset'
 data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
 data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = ('my_data/thumos14/annotations/apn/apn_train.csv', 'my_data/thumos14/annotations/apn/apn_val.csv')
+ann_file_val = 'my_data/thumos14/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[110.7975, 103.3005, 96.2625], std=[70.584, 68.1815, 69.7935], to_bgr=False)
@@ -111,8 +111,8 @@ log_config = dict(interval=500, hooks=[dict(type='TensorboardLoggerHook'), dict(
 # runtime settings
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/apn_ord_i3d_aug_20x1x1_10e_thumos14_rgb/'
+work_dir = './work_dirs/apn_coral_i3d_aug_20x1x1_10e_thumos14_rgb/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

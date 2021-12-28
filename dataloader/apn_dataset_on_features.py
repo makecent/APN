@@ -187,7 +187,7 @@ class APNFeaturesDataset(Dataset):
 
     def evaluate(self,
                  results,
-                 metrics='mae',
+                 metrics='MAE',
                  metric_options={},
                  dataset_name='Val',
                  dump_detections=False,
@@ -212,7 +212,7 @@ class APNFeaturesDataset(Dataset):
             f'{len(results)} != {len(self)}')
 
         metrics = metrics if isinstance(metrics, (list, tuple)) else [metrics]
-        allowed_metrics = ['mae', 'loss', 'mAP', 'AR@AN', 'top_k_based_progression', 'framecls_top_k_accuracy',
+        allowed_metrics = ['MAE', 'loss', 'mAP', 'AR@AN', 'top_k_based_progression', 'framecls_top_k_accuracy',
                            'framecls_mean_class_accuracy', 'framecls_top_k_accuracy_based_on_apn', 'framecls_mean_class_accuracy_based_on_apn']
         for metric in metrics:
             if metric not in allowed_metrics:
@@ -234,15 +234,15 @@ class APNFeaturesDataset(Dataset):
                 print_log(log_msg, logger=logger)
                 continue
 
-            if metric == 'mae':
+            if metric == 'MAE':
                 prog_labels = self.get_progression_labels(denormalized=True)
                 if 'predictions' in results:
                     progs = results['predictions']
-                    mae = np.mean(np.abs(progs - prog_labels))
+                    MAE = np.mean(np.abs(progs - prog_labels))
                     # Normalized to range [0, 100] if num_stages is not 100
-                    mae *= 100 / self.num_stages
-                    eval_results['mae'] = mae
-                    log_msg = f'\n{dataset_name} mae\t{mae:.2f}'
+                    MAE *= 100 / self.num_stages
+                    eval_results['MAE'] = MAE
+                    log_msg = f'\n{dataset_name} MAE\t{MAE:.2f}'
                     print_log(log_msg, logger=logger)
                     continue
                 elif 'exception_progressions' in results:
@@ -253,7 +253,7 @@ class APNFeaturesDataset(Dataset):
                     excp_mae *= 100 / self.num_stages
                     eval_results['arg_mae'] = arg_mae
                     eval_results['excp_mae'] = excp_mae
-                    eval_results['mae'] = excp_mae
+                    eval_results['MAE'] = excp_mae
                     log_msg1 = f'\n{dataset_name} arg_mae\t{arg_mae:.2f}'
                     log_msg2 = f'\n{dataset_name} excp_mae\t{excp_mae:.2f}'
                     print_log(log_msg1, logger=logger)

@@ -1,5 +1,5 @@
 _base_ = [
-    './_base_/models/apn_threshold_i3d.py', './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
+    './_base_/apn_coral+random_i3d_rgb.py', './_base_/Adam_10e.py', './_base_/default_runtime.py'
 ]
 
 # Change defaults
@@ -86,4 +86,4 @@ data = dict(
 
 # output settings
 work_dir = './work_dirs/apn_coral_r3dsony_32x5_10e_activitynet5fps_rgb/'
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

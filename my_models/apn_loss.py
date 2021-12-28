@@ -5,36 +5,10 @@ from torch import sigmoid, softmax, clamp, log_softmax, tensor, argmax, zeros, s
 import numpy as np
 from mmaction.models.builder import LOSSES
 from mmaction.models.losses import BaseWeightedLoss
+from my_models.apn import get_correlated_progressions
 
 
-def keep_corresponding_rows_only(output, class_label, dim=1):
-    """
-    Select rows from output with the index of class_label.
-    Example:
-        output = [[[1, 2],
-                   [3, 4]],
-                  [[5, 6],
-                   [7, 8]]])
-        class_label = [0, 1]
-        indexed_output = [[1, 2],
-                          [7, 8]]
-    Args:
-        output: Tensor. [N, A, S]
-        class_label: Tensor. [N] in range of A
-        dim: Int. Determine which dim to select on.
-    Returns:
-        indexed_output: Tensor. [N, S]
-    """
-    index_shape = list(output.shape)
-    index_shape[dim] = 1
-    if output.shape[dim] == 1:
-        # proposal generation, pseudo indexing for generality.
-        class_label = torch.zeros_like(class_label)
-    class_label = class_label.view(-1, *(output.dim() - 1) * [1])
 
-    index = class_label.expand(index_shape)
-    indexed_output = output.gather(dim, index).squeeze(dim)
-    return indexed_output
 
 
 @LOSSES.register_module()
@@ -82,7 +56,7 @@ class ApnMAELoss(ApnBaseLoss):
     """Mean Absolute Error Loss"""
 
     def _forward_ignore(self, output, progression_label, class_label):
-        indexed_output = clamp(keep_corresponding_rows_only(output, class_label), max=1, min=0)
+        indexed_output = clamp(get_correlated_progressions(output, class_label), max=1, min=0)
         loss = l1_loss(indexed_output, progression_label.squeeze(-1))
         return loss
 
@@ -112,7 +86,7 @@ class ApnMAELoss(ApnBaseLoss):
         output = clamp(output, max=1, min=0)
         num_sample = output.shape[0]
         num_action = output.shape[1]
-        indexed_output = clamp(keep_corresponding_rows_only(output, class_label), max=1, min=0)
+        indexed_output = clamp(get_correlated_progressions(output, class_label), max=1, min=0)
         correlated_loss = l1_loss(indexed_output, progression_label.squeeze(-1))
         uncorrelated_progs_sum = output.sum() - indexed_output.sum()
         random_sum_target = tensor((num_action - 1) * num_sample * 0.5)
@@ -120,12 +94,12 @@ class ApnMAELoss(ApnBaseLoss):
         loss = correlated_loss + uncorrelated_loss
         return loss
 
-    @staticmethod
-    def val_output(output, class_label):
-        indexed_output = clamp(keep_corresponding_rows_only(output, class_label), max=1, min=0)
-        progressions = indexed_output * 100
-        progressions = progressions.long().cpu().numpy()
-        return progressions
+    # @staticmethod
+    # def val_output(output, class_label):
+    #     indexed_output = clamp(get_correlated_progressions(output, class_label), max=1, min=0)
+    #     progressions = indexed_output * 100
+    #     progressions = progressions.long().cpu().numpy()
+    #     return progressions
 
     @staticmethod
     def test_output(output):
@@ -149,7 +123,7 @@ class ApnCELoss(ApnBaseLoss):
             torch.Tensor: The returned bce loss.
         """
         output = log_softmax(output, dim=-1)
-        indexed_output = keep_corresponding_rows_only(output, class_label)
+        indexed_output = get_correlated_progressions(output, class_label)
         loss = nll_loss(indexed_output, progression_label.squeeze(-1))
 
         return loss
@@ -182,25 +156,25 @@ class ApnCELoss(ApnBaseLoss):
 
         return loss
 
-    @staticmethod
-    def val_output(output, class_label, return_tensor=False):
-        num_sample = output.shape[0]
-        num_stage = output.shape[2]
-
-        output = softmax(output, dim=-1)
-        indexed_output = keep_corresponding_rows_only(output, class_label)
-
-        arg_prog = argmax(indexed_output, dim=-1)
-        arg_prog = torch.true_divide((arg_prog * 100), (num_stage - 1))
-
-        stage_matrix = arange(0, num_stage, device=output.device).unsqueeze(0).expand(num_sample, num_stage)
-        exp_prog = (indexed_output * stage_matrix).sum(dim=-1)
-        exp_prog = exp_prog * 100 / (num_stage - 1)
-
-        if return_tensor:
-            return exp_prog
-        else:
-            return list(zip(arg_prog.cpu().numpy(), exp_prog.cpu().numpy()))
+    # @staticmethod
+    # def val_output(output, class_label, return_tensor=False):
+    #     num_sample = output.shape[0]
+    #     num_stage = output.shape[2]
+    #
+    #     output = softmax(output, dim=-1)
+    #     indexed_output = get_correlated_progressions(output, class_label)
+    #
+    #     arg_prog = argmax(indexed_output, dim=-1)
+    #     arg_prog = torch.true_divide((arg_prog * 100), (num_stage - 1))
+    #
+    #     stage_matrix = arange(0, num_stage, device=output.device).unsqueeze(0).expand(num_sample, num_stage)
+    #     exp_prog = (indexed_output * stage_matrix).sum(dim=-1)
+    #     exp_prog = exp_prog * 100 / (num_stage - 1)
+    #
+    #     if return_tensor:
+    #         return exp_prog
+    #     else:
+    #         return list(zip(arg_prog.cpu().numpy(), exp_prog.cpu().numpy()))
 
     @staticmethod
     def test_output(output, return_tensor=False):
@@ -230,7 +204,7 @@ class ApnBCELoss(ApnBaseLoss):
     """
 
     def _forward_ignore(self, output, progression_label, class_label):
-        indexed_output = keep_corresponding_rows_only(output, class_label)
+        indexed_output = get_correlated_progressions(output, class_label)
         loss = cross_entropy(indexed_output.view(-1, 2), progression_label.view(-1).long())
 
         return loss
@@ -272,14 +246,14 @@ class ApnBCELoss(ApnBaseLoss):
         loss = correlated_loss + 1 * uncorrelated_loss
         return loss
 
-    @staticmethod
-    def val_output(output, class_label):
-        num_stage = output.shape[2]
-        indexed_output = keep_corresponding_rows_only(output, class_label)
-        prob = softmax(indexed_output, dim=-1).cpu().numpy()
-        progressions = np.count_nonzero(prob[..., 1] > 0.5, axis=-1)
-        progressions = progressions * 100 / num_stage
-        return progressions
+    # @staticmethod
+    # def val_output(output, class_label):
+    #     num_stage = output.shape[2]
+    #     indexed_output = get_correlated_progressions(output, class_label)
+    #     prob = softmax(indexed_output, dim=-1).cpu().numpy()
+    #     progressions = np.count_nonzero(prob[..., 1] > 0.5, axis=-1)
+    #     progressions = progressions * 100 / num_stage
+    #     return progressions
 
     @staticmethod
     def test_output(output):
@@ -298,7 +272,7 @@ class ApnSORDLoss(ApnCELoss):
         num_stages = output.shape[2]
 
         output = log_softmax(output, dim=-1)
-        indexed_output = keep_corresponding_rows_only(output, class_label)
+        indexed_output = get_correlated_progressions(output, class_label)
 
         stage_matrix = arange(0, num_stages, device=progression_label.device).unsqueeze(0).expand(num_samples,
                                                                                                         num_stages)
@@ -339,7 +313,7 @@ class ApnCORALLoss(ApnBaseLoss):
 
     def _forward_ignore(self, output, progression_label, class_label):
         output = sigmoid(output)
-        indexed_output = keep_corresponding_rows_only(output, class_label)
+        indexed_output = get_correlated_progressions(output, class_label)
         loss = binary_cross_entropy(indexed_output, progression_label)
         return loss
 
@@ -380,14 +354,14 @@ class ApnCORALLoss(ApnBaseLoss):
         loss = correlated_loss + 1 * uncorrelated_loss
         return loss
 
-    @staticmethod
-    def val_output(output, class_label):
-        num_stage = output.shape[2]
-        output = sigmoid(output)
-        indexed_output = keep_corresponding_rows_only(output, class_label).cpu().numpy()
-        progressions = np.count_nonzero(indexed_output > 0.5, axis=-1)
-        progressions = progressions * 100 / num_stage
-        return progressions
+    # @staticmethod
+    # def val_output(output, class_label):
+    #     num_stage = output.shape[2]
+    #     output = sigmoid(output)
+    #     indexed_output = get_correlated_progressions(output, class_label).cpu().numpy()
+    #     progressions = np.count_nonzero(indexed_output > 0.5, axis=-1)
+    #     progressions = progressions * 100 / num_stage
+    #     return progressions
 
     @staticmethod
     def test_output(output):

@@ -47,13 +47,13 @@ train.sh $CONFIG $GPUs $KWARGS
 If you are familiar with mmlab repos and would like to run in a mmlab style, you may use the following cmd to start a training:
 
 ```shell
-PYTHONPATH=$PWD:$PYTHONPATH mim train mmaction configs/localization/apn/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow.py --gpus 2 --validate --launcher pytorch
+PYTHONPATH=$PWD:$PYTHONPATH mim train mmaction configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py --gpus 2 --validate --launcher pytorch
 ```
 </details>
 
 **Example**:
 ```shell
-train.sh configs/localization/apn/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow.py 2
+train.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py 2
 ```
 will train apn with threshold+randomness loss on thumos14 optical flows, with 32 frames input, temporal interval 4. Backbone I3D.
 ## Evaluation
@@ -72,12 +72,12 @@ or with details
 If you are familiar with mmlab repos and would like to run in a mmlab style, you may use the following cmd to start a training:
 
 ```shell
-PYTHONPATH=$PWD:$PYTHONPATH mim test mmaction configs/localization/apn/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow.py --checkpoint ckpt.pth --gpus 2 --metrics mAP
+PYTHONPATH=$PWD:$PYTHONPATH mim test mmaction configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py --checkpoint ckpt.pth --gpus 2 --metrics mAP
 ```
 </details>
 
 **Example**:
 ```shell
-test.sh configs/localization/apn/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow.py work_dirs/apn_coralrandom_r3dsony_32x4_10e_thumos14_flow/latest.pth 2
+test.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py work_dirs/apn_coral+random_r3dsony_32x4_10e_thumos14_flow/latest.pth 2
 ```
 will evalute the model of last epoch using two GPUs.

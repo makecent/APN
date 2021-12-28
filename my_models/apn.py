@@ -9,25 +9,53 @@ from mmaction.models.localizers import BaseTAGClassifier
 from mmaction.models.backbones.resnet3d_slowfast import ResNet3dSlowFast
 
 
+def get_correlated_progressions(output, class_label, dim=1):
+    """
+    Select rows from output with the index of class_label.
+    Example:
+        output = [[[1, 2],
+                   [3, 4]],
+                  [[5, 6],
+                   [7, 8]]]
+        class_label = [0, 1]
+        indexed_output = [[1, 2],
+                          [7, 8]]
+    Args:
+        output: Tensor. [N, A, S]
+        class_label: Tensor. [N] in range of A
+        dim: Int. Determine which dim to select on.
+    Returns:
+        indexed_output: Tensor. [N, S]
+    """
+    index_shape = list(output.shape)
+    index_shape[dim] = 1
+    if output.shape[dim] == 1:
+        # proposal generation, pseudo indexing for generality.
+        class_label = torch.zeros_like(class_label)
+    class_label = class_label.view(-1, *(output.dim() - 1) * [1])
+
+    index = class_label.expand(index_shape)
+    indexed_output = output.gather(dim, index).squeeze(dim)
+    return indexed_output
+
+
 @LOCALIZERS.register_module()
 class APN(BaseTAGClassifier):
     """APN model framework."""
 
     def __init__(self,
                  backbone,
-                 cls_head,
-                 pretrained=None):
+                 cls_head):
         super(BaseTAGClassifier, self).__init__()
         self.backbone = build_backbone(backbone)
         self.cls_head = build_head(cls_head)
-        self.pretrained = pretrained
         self.init_weights()
 
     def _forward(self, imgs):
-        # [N, num_clips, C, T, H, W] -> [N*num_clips, C, T, H, W], which make clips training parallelly.
-        # For 2D backbone, there is no 'T' dimension.
+        # [N, num_clips, C, T, H, W] -> [N*num_clips, C, T, H, W], which make clips training parallely (For TSN).
+        # For 2D backbone, there is no 'T' dimension. For our APN, num_clips is always equal to 1.
         batches = imgs.shape[0]
-        imgs = imgs.reshape((-1, ) + imgs.shape[2:])
+        imgs = imgs.reshape((-1,) + imgs.shape[2:])
         num_segs = imgs.shape[0] // batches
 
         x = self.extract_feat(imgs)
@@ -61,60 +89,11 @@ class APN(BaseTAGClassifier):
 
         return losses
 
-    def forward_validate(self, imgs, progression_label=None, class_label=None):
-        """Defines the computation performed at every call when evaluation and testing."""
-        output = self._forward(imgs)
-        loss = self.compute_loss(output, progression_label, class_label).cpu().numpy()
-        progressions = self.cls_head.loss.val_output(output, class_label)
-        return list(zip(progressions, np.tile(loss, reps=output.shape[0])))
-
     def forward_test(self, imgs, progression_label=None, class_label=None):
         """Defines the computation performed at every call when evaluation and testing."""
         output = self._forward(imgs)
         progressions = self.cls_head.loss.test_output(output)
+        if progression_label is not None:
+            # in validation stage, we remove uncorrelated progressions (useless for computing MAE) to save memory
+            progressions = get_correlated_progressions(progressions, class_label)
         return progressions
-
-    def forward_dummy(self, imgs):
-        """Used for computing network FLOPs.
-
-        See ``tools/analysis/get_flops.py``.
-
-        Args:
-            imgs (torch.Tensor): Input images.
-
-        Returns:
-            Tensor: Class score.
-        """
-        imgs = imgs.reshape((-1,) + imgs.shape[2:])
-
-        x = self.extract_feat(imgs)
-        outs = (self.cls_head(x),)
-        return outs
-
-    def forward(self,
-                imgs,
-                progression_label=None,
-                class_label=None,
-                return_loss=True):
-        """Define the computation performed at every call."""
-        if return_loss:
-            return self.forward_train(imgs, progression_label, class_label)
-        elif progression_label:
-            return self.forward_validate(imgs, progression_label, class_label)
-        else:
-            return self.forward_test(imgs)
-
-    def init_weights(self):
-        """Initiate the parameters either from existing checkpoint or from
-        scratch."""
-        self.backbone.init_weights()
-        self.cls_head.init_weights()
-
-        if isinstance(self.pretrained, str):
-            logger = get_root_logger()
-            logger.info(f'load model from: {self.pretrained}')
-            load_checkpoint(self, self.pretrained, strict=False, logger=logger)
-        elif not self.pretrained:
-            pass
-        else:
-            raise TypeError('pretrained must be a str or None')

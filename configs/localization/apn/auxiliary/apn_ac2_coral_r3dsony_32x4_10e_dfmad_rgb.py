@@ -1,59 +1,21 @@
 _base_ = [
-    './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
+    './_base_/apn_coral+random_i3d_rgb.py', './_base_/Adam_10e.py', './_base_/default_runtime.py'
 ]
 
 # Change defaults
-# slow: 32 x 4; fast: 128 x 1
-model = dict(
-     type='APN',
-     pretrained='checkpoints/slowfast/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth',
-     backbone=dict(
-         type='ResNet3dSlowFast',
-         pretrained=None,
-         resample_rate=4,  # tau
-         speed_ratio=4,  # alpha
-         channel_ratio=8,  # beta_inv
-         slow_pathway=dict(
-             type='resnet3d',
-             depth=50,
-             pretrained=None,
-             lateral=True,
-             conv1_kernel=(1, 7, 7),
-             dilations=(1, 1, 1, 1),
-             conv1_stride_t=1,
-             pool1_stride_t=1,
-             inflate=(0, 0, 1, 1),
-             norm_eval=False),
-         fast_pathway=dict(
-             type='resnet3d',
-             depth=50,
-             pretrained=None,
-             lateral=False,
-             base_channels=8,
-             conv1_kernel=(5, 7, 7),
-             conv1_stride_t=1,
-             pool1_stride_t=1,
-             norm_eval=False)),
-     cls_head=dict(
-         type='APNHead',
-         num_classes=20,
-         in_channels=2304,
-         output_type='coral',
-         loss=dict(type='ApnCORALLoss', uncorrelated_progs='random'),
-         dropout_ratio=0.5,
-         spatial_type='avg3d'))
+model = dict(cls_head=dict(num_classes=1, loss=dict(uncorrelated_progs='ignore')))
 
 # input configuration
-num_classes = 20
-clip_len = 128  # T x tau x alpha,
-frame_interval = 1  # alpha
+clip_len = 32
+frame_interval = 4
 
 # dataset settings
 dataset_type = 'APNDataset'
-data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
-data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+data_root_train = 'my_data/dfmad70/rawframes/resized_train'
+data_root_val = 'my_data/dfmad70/rawframes/resized_test'
+ann_file_train = 'my_data/dfmad70/ann_train_ac2.csv'
+ann_file_val = 'my_data/dfmad70/ann_test_ac2.csv'
+ann_file_test = 'my_data/dfmad70/ann_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
@@ -91,14 +53,14 @@ test_pipeline = [
 
 data = dict(
     videos_per_gpu=8,
-    workers_per_gpu=6,
+    workers_per_gpu=8,
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
         pipeline=train_pipeline,
         data_prefixes=data_root_train,
         filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        modality='RGB'
     ),
     val=dict(
         type=dataset_type,
@@ -106,11 +68,11 @@ data = dict(
         pipeline=val_pipeline,
         data_prefixes=data_root_val,
         filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        modality='RGB'
     ),
     test=dict(
         type=dataset_type,
-        ann_files=ann_file_val,
+        ann_files=ann_file_test,
         pipeline=test_pipeline,
         data_prefixes=data_root_val,
         filename_tmpl='img_{:05}.jpg',
@@ -119,5 +81,5 @@ data = dict(
     ))
 
 # output settings
-work_dir = './work_dirs/apn_coralrandom_slowfastr50_32x4_128x1_10e_thumos14_rgb/'
-output_config = dict(out=f'{work_dir}/results.json')
+work_dir = './work_dirs/apn_ac2_coral_r3dsony_32x4_10e_dfmad_rgb/'
+output_config = dict(out=f'{work_dir}/progressions.pkl')

@@ -17,8 +17,8 @@ model = dict(
 dataset_type = 'APNFeaturesDataset'
 feat_train = 'my_data/thumos14/thumos14_tsp_features/validation/'
 feat_val = 'my_data/thumos14/thumos14_tsp_features/test/'
-ann_file_train = 'my_data/thumos14/ann_val.csv'
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = 'my_data/thumos14/annotations/apn/apn_val.csv'
+ann_file_val = 'my_data/thumos14/annotations/apn/apn_test.csv'
 
 
 train_pipeline = [
@@ -88,4 +88,4 @@ work_dir = './work_dirs/apn_coral_base_64x1_10e_th14tsp/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

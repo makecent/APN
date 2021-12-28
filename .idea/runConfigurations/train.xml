@@ -12,8 +12,8 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-    <option name="SCRIPT_NAME" value="$USER_HOME$/miniconda3/envs/open-mmlab/lib/python3.7/site-packages/mmaction/tools/train.py" />
-    <option name="PARAMETERS" value="configs/localization/apn/apn_coralrandom_r50_1x1_10e_dfmad_rgb.py --gpus 1 --validate" />
+    <option name="SCRIPT_NAME" value="$USER_HOME$/miniconda3/envs/open-mmlab/lib/python3.9/site-packages/mmaction/.mim/tools/train.py" />
+    <option name="PARAMETERS" value="configs/localization/ssn/ssn_r50_450e_dfmad_rgb_train.py --gpus 1 --validate" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

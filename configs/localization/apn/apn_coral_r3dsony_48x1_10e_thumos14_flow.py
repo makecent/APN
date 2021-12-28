@@ -1,10 +1,11 @@
 _base_ = [
-    './_base_/models/apn_threshold_i3d.py', './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
+    './_base_/apn_coral+random_i3d_flow.py',
+    './_base_/Adam_10e.py',
+    './_base_/default_runtime.py',
 ]
 
 # Change defaults
-model = dict(backbone=dict(pretrained='checkpoints/r3d_sony/model_flow.pth', modality='flow'),
-             cls_head=dict(uncorrelated_progs='ignore'))
+model = dict(cls_head=dict(loss=dict(uncorrelated_progs='ignore')))
 
 # input configuration
 clip_len = 48
@@ -14,8 +15,8 @@ frame_interval = 1
 dataset_type = 'APNDataset'
 data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
 data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = ('my_data/thumos14/annotations/apn/apn_train.csv', 'my_data/thumos14/annotations/apn/apn_val.csv')
+ann_file_val = 'my_data/thumos14/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128], std=[128, 128], to_bgr=False)
@@ -82,4 +83,17 @@ data = dict(
 
 # output settings
 work_dir = './work_dirs/apn_coral_r3dsony_48x1_10e_thumos14_flow/'
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')
+
+# evaluation config
+eval_config = dict(
+    metric_options=dict(
+        mAP=dict(
+            search=dict(
+                min_e=60,
+                max_s=40,
+                min_L=60,
+                method='mse'),
+            nms=dict(iou_thr=0.4),
+            dump_detections=f'{work_dir}/detections.pkl',
+            dump_evaluation=f'{work_dir}/evaluation.json')))

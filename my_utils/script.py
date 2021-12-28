@@ -1,3 +1,5 @@
+# import pickle
+#
 # import mmcv
 # import numpy as np
 # import pandas as pd
@@ -9,7 +11,7 @@
 # from mmaction.models import build_model, builder
 # from mmaction.datasets import build_dataset
 # from mmaction.localization import eval_ap
-# from mmaction.localization.apn_utils import plot_detection, plot_prediction
+# from dataloader.apn_utils import plot_detection, plot_prediction
 
 
 # %% check if generated raw frames correct
@@ -134,7 +136,7 @@
 ## Resize Images
 # from pathlib import Path
 # import mmcv
-# p = Path("my_data/DFMAD-70/Images/test")
+# p = Path("my_data/dfmad70/rawframes/test")
 # for img_folder in p.iterdir():
 #     for img_p in img_folder.iterdir():
 #         new_path = list(img_p.parts)
@@ -318,7 +320,7 @@
 # from mmaction.datasets import build_dataset
 # from mmaction.models import build_model
 #
-# model_name = 'apn_coralrandom_r3dsony_32x4_10e_thumos14_flow'
+# model_name = 'apn_coral+random_r3dsony_32x4_10e_thumos14_flow'
 # cfg = Config.fromfile(f"configs/localization/apn/{model_name}.py")
 # model = build_model(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
 # load_checkpoint(model, f"work_dirs/{model_name}/epoch_10.pth", map_location='cpu')
@@ -369,5 +371,9 @@
 #     if t1 / t2 > 1.02 or t1 / t2 < 0.98:
 #         print('\n', i, t1, t2)
 
-import my_models
-a = 1
+
+
+
+
+
+

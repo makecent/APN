@@ -1,20 +1,59 @@
 _base_ = [
-    './_base_/models/apn_threshold_i3d.py', './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
+    './_base_/Adam_10e.py', './_base_/default_runtime.py'
 ]
 
 # Change defaults
-model = dict(cls_head=dict(num_classes=1, loss=dict(uncorrelated_progs='ignore')))
+# slow: 32 x 4; fast: 128 x 1
+model = dict(
+     type='APN',
+     pretrained='checkpoints/slowfast/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth',
+     backbone=dict(
+         type='ResNet3dSlowFast',
+         pretrained=None,
+         resample_rate=4,  # tau
+         speed_ratio=4,  # alpha
+         channel_ratio=8,  # beta_inv
+         slow_pathway=dict(
+             type='resnet3d',
+             depth=50,
+             pretrained=None,
+             lateral=True,
+             conv1_kernel=(1, 7, 7),
+             dilations=(1, 1, 1, 1),
+             conv1_stride_t=1,
+             pool1_stride_t=1,
+             inflate=(0, 0, 1, 1),
+             norm_eval=False),
+         fast_pathway=dict(
+             type='resnet3d',
+             depth=50,
+             pretrained=None,
+             lateral=False,
+             base_channels=8,
+             conv1_kernel=(5, 7, 7),
+             conv1_stride_t=1,
+             pool1_stride_t=1,
+             norm_eval=False)),
+     cls_head=dict(
+         type='APNHead',
+         num_classes=20,
+         in_channels=2304,
+         output_type='coral',
+         loss=dict(type='ApnCORALLoss', uncorrelated_progs='random'),
+         dropout_ratio=0.5,
+         spatial_type='avg3d'))
 
 # input configuration
-clip_len = 32
-frame_interval = 4
+num_classes = 20
+clip_len = 128  # T x tau x alpha,
+frame_interval = 1  # alpha
 
 # dataset settings
 dataset_type = 'APNDataset'
 data_root_train = ('my_data/thumos14/rawframes/train', 'my_data/thumos14/rawframes/val')
 data_root_val = 'my_data/thumos14/rawframes/test'
-ann_file_train = ('my_data/thumos14/ann_train.csv', 'my_data/thumos14/ann_val.csv')
-ann_file_val = 'my_data/thumos14/ann_test.csv'
+ann_file_train = ('my_data/thumos14/apn_train.csv', 'my_data/thumos14/annotations/apn/apn_val.csv')
+ann_file_val = 'my_data/thumos14/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
@@ -51,8 +90,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=10,
-    workers_per_gpu=8,
+    videos_per_gpu=8,
+    workers_per_gpu=6,
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
@@ -80,5 +119,20 @@ data = dict(
     ))
 
 # output settings
-work_dir = './work_dirs/apn_prop_coral_r3dsony_32x4_10e_thumos14_rgb/'
-output_config = dict(out=f'{work_dir}/results.json')
+work_dir = './work_dirs/apn_coral+random_slowfastr50_32x4_128x1_10e_thumos14_rgb/'
+output_config = dict(out=f'{work_dir}/progressions.pkl')
+
+# evaluation
+evaluation = dict(metrics=['MAE'],
+                  save_best='MAE',
+                  rule='less',
+                  metric_options=dict(
+                      mAP=dict(
+                          search=dict(
+                              min_e=80,
+                              max_s=20,
+                              min_L=600,
+                              method='mse'),
+                          nms=dict(iou_thr=0.4),
+                          dump_detections=f'{work_dir}/detections.pkl',
+                          dump_evaluation=f'{work_dir}/evaluation.json')))

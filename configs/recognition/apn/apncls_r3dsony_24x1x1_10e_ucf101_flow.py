@@ -95,7 +95,7 @@ lr_config = dict(policy='fixed')
 total_epochs = 10
 
 # evaluation
-evaluation = dict(interval=1, save_best='mae', metrics=['loss', 'mae'], dataset_name='Val')
+evaluation = dict(interval=1, save_best='MAE', metrics=['loss', 'MAE'], dataset_name='Val')
 
 # others
 checkpoint_config = dict(interval=1)
@@ -108,4 +108,4 @@ work_dir = './work_dirs/apncls_r3dsony_24x1x1_10e_ucf101_rgb/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

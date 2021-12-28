@@ -19,7 +19,7 @@ test_cfg = dict(
     ssn=dict(
         sampler=dict(test_interval=6, batch_size=16),
         evaluater=dict(
-            top_k=2000,
+            top_k=300,
             nms=0.2,
             softmax_before_filter=True,
             cls_score_dict=None,
@@ -35,107 +35,59 @@ model = dict(
         partial_bn=True),
     spatial_type='avg',
     dropout_ratio=0.8,
-    loss_cls=dict(type='SSNLoss'),
     cls_head=dict(
         type='SSNHead',
         dropout_ratio=0.,
         in_channels=2048,
         num_classes=3,
-        consensus=dict(
-            type='STPPTrain',
-            stpp_stage=(1, 1, 1),
-            num_segments_list=(2, 5, 2)),
+        consensus=dict(type='STPPTest', stpp_stage=(1, 1, 1)),
         use_regression=True),
-    train_cfg=train_cfg)
+    test_cfg=test_cfg)
 # dataset settings
 dataset_type = 'SSNDataset'
-data_root = 'my_data/DFMAD-70/Images/train'
-data_root_val = 'my_data/DFMAD-70/Images/train'
-data_root_test = 'my_data/DFMAD-70/Images/test'
-ann_file_train = 'my_data/DFMAD-70/proposals/dfmad_bmn_train_100_proposal_list.txt'
-ann_file_val = 'my_data/DFMAD-70/proposals/dfmad_bmn_train_100_proposal_list.txt'
-ann_file_test = 'my_data/DFMAD-70/proposals/dfmad_bmn_test_100_proposal_list.txt'
+data_root_test = 'my_data/dfmad70/rawframes/resized_test'
+ann_file_test = 'my_data/dfmad70/proposals/dfmad_bmn_test_100_proposal_list.txt'
 img_norm_cfg = dict(mean=[104, 117, 128], std=[1, 1, 1], to_bgr=True)
-train_pipeline = [
+test_pipeline = [
     dict(
         type='SampleProposalFrames',
         clip_len=1,
         body_segments=5,
         aug_segments=(2, 2),
-        aug_ratio=0.5),
+        aug_ratio=0.5,
+        mode='test'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(340, 256), keep_ratio=False),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Flip', flip_ratio=0),
     dict(type='Normalize', **img_norm_cfg),
-    dict(type='FormatShape', input_format='NPTCHW'),
+    dict(type='FormatShape', input_format='NCHW'),
     dict(
         type='Collect',
         keys=[
-            'imgs', 'reg_targets', 'proposal_scale_factor', 'proposal_labels',
-            'proposal_type'
+            'imgs', 'relative_proposal_list', 'scale_factor_list',
+            'proposal_tick_list', 'reg_norm_consts'
         ],
         meta_keys=[]),
     dict(
         type='ToTensor',
         keys=[
-            'imgs', 'reg_targets', 'proposal_scale_factor', 'proposal_labels',
-            'proposal_type'
-        ])
-]
-val_pipeline = [
-    dict(
-        type='SampleProposalFrames',
-        clip_len=1,
-        body_segments=5,
-        aug_segments=(2, 2),
-        aug_ratio=0.5),
-    dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(340, 256), keep_ratio=False),
-    dict(type='CenterCrop', crop_size=224),
-    dict(type='Flip', flip_ratio=0.5),
-    dict(type='Normalize', **img_norm_cfg),
-    dict(type='FormatShape', input_format='NPTCHW'),
-    dict(
-        type='Collect',
-        keys=[
-            'imgs', 'reg_targets', 'proposal_scale_factor', 'proposal_labels',
-            'proposal_type'
-        ],
-        meta_keys=[]),
-    dict(
-        type='ToTensor',
-        keys=[
-            'imgs', 'reg_targets', 'proposal_scale_factor', 'proposal_labels',
-            'proposal_type'
+            'imgs', 'relative_proposal_list', 'scale_factor_list',
+            'proposal_tick_list', 'reg_norm_consts'
         ])
 ]
 data = dict(
     videos_per_gpu=1,
     workers_per_gpu=2,
-    train=dict(
+    test=dict(
         type=dataset_type,
-        ann_file=ann_file_train,
-        data_prefix=data_root,
+        ann_file=ann_file_test,
+        data_prefix=data_root_test,
         train_cfg=train_cfg,
         test_cfg=test_cfg,
-        body_segments=5,
-        aug_segments=(2, 2),
         aug_ratio=0.5,
-        test_mode=False,
-        verbose=True,
-        pipeline=train_pipeline),
-    val=dict(
-        type=dataset_type,
-        ann_file=ann_file_val,
-        data_prefix=data_root,
-        train_cfg=train_cfg,
-        test_cfg=test_cfg,
-        body_segments=5,
-        aug_segments=(2, 2),
-        aug_ratio=0.5,
-        test_mode=False,
-        pipeline=val_pipeline))
+        test_mode=True,
+        pipeline=test_pipeline))
 # optimizer
 optimizer = dict(
     type='SGD', lr=0.001, momentum=0.9,
@@ -143,14 +95,13 @@ optimizer = dict(
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(policy='step', step=[200, 400])
-checkpoint_config = dict(interval=50)
+checkpoint_config = dict(interval=5)
 log_config = dict(interval=25, hooks=[dict(type='TensorboardLoggerHook'), dict(type='TextLoggerHook')])
 # runtime settings
 total_epochs = 450
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/ssn_r50_1x5_450e_dfmad_rgb'
+work_dir = './work_dirs/ssn_bmn100_r50_450e_dfmad_rgb'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-find_unused_parameters = True

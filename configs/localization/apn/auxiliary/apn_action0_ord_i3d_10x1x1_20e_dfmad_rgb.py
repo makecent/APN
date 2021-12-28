@@ -34,11 +34,11 @@ train_cfg = None
 test_cfg = None
 # dataset settings
 dataset_type = 'APNDataset'
-data_root = 'my_data/DFMAD-70/Images/train'
-data_root_val = 'my_data/DFMAD-70/Images/test'
-ann_file_train = 'my_data/DFMAD-70/ann_train.csv'
-ann_file_val = 'my_data/DFMAD-70/ann_test.csv'
-ann_file_test = 'my_data/DFMAD-70/ann_test.csv'
+data_root = 'my_data/dfmad70/rawframes/train'
+data_root_val = 'my_data/dfmad70/rawframes/test'
+ann_file_train = 'my_data/dfmad70/ann_train.csv'
+ann_file_val = 'my_data/dfmad70/ann_test.csv'
+ann_file_test = 'my_data/dfmad70/ann_test.csv'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 train_pipeline = [
@@ -121,8 +121,8 @@ evaluation = [dict(save_best=False, metrics=['loss', 'mae'], num_stages=num_stag
 # runtime settings
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/apn_action0_ord_i3d_10x1x1_20e_dfmad_rgb/'
+work_dir = './work_dirs/apn_action0_coral_i3d_10x1x1_20e_dfmad_rgb/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')

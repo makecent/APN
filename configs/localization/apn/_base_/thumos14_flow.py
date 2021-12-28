@@ -1,22 +1,18 @@
-_base_ = [
-    './_base_/models/apn_threshold_i3d.py', './_base_/schedules/Adam_10e.py', './_base_/default_runtime.py'
-]
-
-# Change defaults
-model = dict(backbone=dict(pretrained='checkpoints/r3d_sony/model_flow.pth', modality='flow'),
-             cls_head=dict(num_classes=3))
-
 # input configuration
 clip_len = 32
 frame_interval = 4
 
 # dataset settings
 dataset_type = 'APNDataset'
-data_root_train = 'my_data/dfmad70/rawframes/resized_train'
-data_root_val = 'my_data/dfmad70/rawframes/resized_test'
-ann_file_train = 'my_data/dfmad70/ann_train.csv'
-ann_file_val = 'my_data/dfmad70/ann_test.csv'
-ann_file_test = 'my_data/dfmad70/ann_test.csv'
+data_root = 'my_data/thumos14'
+
+data_root_train = (data_root + '/rawframes/train',
+              data_root + '/rawframes/val')
+data_root_val = data_root + '/rawframes/test'
+
+ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
+                  data_root + '/annotations/apn/apn_val.csv')
+ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128], std=[128, 128], to_bgr=False)
@@ -53,7 +49,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=8,
+    videos_per_gpu=10,
     workers_per_gpu=8,
     train=dict(
         type=dataset_type,
@@ -61,7 +57,7 @@ data = dict(
         pipeline=train_pipeline,
         data_prefixes=data_root_train,
         filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow'
+        modality='Flow',
     ),
     val=dict(
         type=dataset_type,
@@ -69,7 +65,7 @@ data = dict(
         pipeline=val_pipeline,
         data_prefixes=data_root_val,
         filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow'
+        modality='Flow',
     ),
     test=dict(
         type=dataset_type,
@@ -78,9 +74,5 @@ data = dict(
         data_prefixes=data_root_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
-        untrimmed=True
+        untrimmed=True,
     ))
-
-# output settings
-work_dir = './work_dirs/apn_coralrandom_r3dsony_32x4_10e_dfmad_flow/'
-output_config = dict(out=f'{work_dir}/progressions.pkl')

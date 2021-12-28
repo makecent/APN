@@ -1,16 +1,15 @@
 import numpy as np
 import torch
+from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
 
 
-def uniform_1d_sampling(vector, num_sampling):
+def uniform_1d_sampling(vector, num_sampling, return_idx=False):
     input_type = type(vector)
     if isinstance(vector, (list, tuple, range)):
         vector = np.array(vector)
     idx = np.linspace(0, len(vector) - 1, num_sampling, dtype=int)
-    if input_type == list:
-        return vector[idx].tolist()
-    else:
-        return vector[idx]
+    sampled = vector[idx].tolist() if input_type == list else vector[idx]
+    return (sampled, idx) if return_idx else sampled
 
 
 def compute_iou(a, b):
@@ -46,14 +45,14 @@ def cluster_and_flatten(arr, gap):
     return r
 
 
-def score_progression_proposal(proposal, method='mse'):
-    template = np.linspace(0, 100, len(proposal))
-    # xmin, xmax = (49, 51)
-    # noise = (proposal > xmin) & (proposal < xmax)
-    # template, proposal = template * ~noise, proposal * ~noise
+def score_progression_proposal(proposal, method='mse', backend='numpy'):
+    # 1666.66/33.33 is the minimum MSE/MAE error of 100 ranks.
+    pytorch = True if backend == 'torch' else False
+    template = torch.linspace(0, 100, len(proposal), device=proposal.device) if pytorch else np.linspace(0, 100,
+                                                                                                         len(proposal))
     if method == 'mae':
-        mse = np.abs(template - proposal).mean()
-        score = -mse / 33.33 + 1
+        mae = torch.abs(proposal - template).mean() if pytorch else np.abs(proposal - template).mean()
+        score = -mae / 33.33 + 1
     elif method == 'mse':
         mse = ((template - proposal) ** 2).mean()
         score = -mse / 1666.66 + 1
@@ -63,43 +62,48 @@ def score_progression_proposal(proposal, method='mse'):
 
 
 def apn_detection_on_single_video(progressions, rescale_rate=1.0, det_kwargs={}):
-    # sampling = det_kwargs.get('sampling', 1000)  # experimental argument
+    sampling = det_kwargs.get('sampling', None)  # experimental argument
     search_kwargs = det_kwargs.get('search', {})
-    search_kwargs['min_L'] /= rescale_rate
     nms_kwargs = det_kwargs.get('nms', {})
 
-    # assert sampling == 'full' or isinstance(sampling, int)
-    # original_len = progressions.shape[0]
-    # if sampling == 'full':
-    #     sampling = original_len
-    # rescale_rate = original_len / sampling
+    if sampling:  # experimental argument
+        assert isinstance(sampling, (int, float))
+        assert rescale_rate == 1.0, "'sampling' is just an experimental argument used to down-sampling 'full' results " \
+                                    "to investigate the impact of sampling with less time" \
+                                    "If you didn't 'test_sampling' as 'full', don't set this 'sampling' argument"
+        rescale_rate = len(progressions) / sampling
+    search_kwargs['min_L'] /= rescale_rate
 
     dets_and_scores = []
     for class_ind, progs_by_class in enumerate(progressions.T):
-        # p = imresize(p_by_v_by_c[np.newaxis, ...].astype(np.float), (rescale_len, 1)).squeeze()
-        # progs_by_class = uniform_1d_sampling(progs_by_class, sampling) if sampling != original_len else progs_by_class
+        if sampling:
+            progs_by_class = uniform_1d_sampling(progs_by_class, sampling)
         dets_by_class, scores_by_class = apn_detection_on_vector(progs_by_class, **search_kwargs)
         dets_by_class = dets_by_class * rescale_rate
         dets_by_class, scores_by_class = nms1d(dets_by_class, scores_by_class, **nms_kwargs)
         dets_and_scores.append(np.hstack([dets_by_class, scores_by_class[:, None]]))
-
+    # set 'min_L' back for the following detection because dictionary objects are mutable.
     search_kwargs['min_L'] *= rescale_rate
+
     return dets_and_scores
 
 
-def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, score_threshold=0, method='mse'):
+def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, score_threshold=0, method='mse',
+                            backbend='numpy'):
     """
-
     :param progression_vector:
     :param min_e:
     :param max_s:
     :param min_L:
     :return:
     """
+    pytorch = True if backbend == 'torch' else False
+    if pytorch:
+        progression_vector = torch.from_numpy(progression_vector).cuda()
     progs = progression_vector.squeeze()
-    start_candidates = np.where(progs < max_s)[0]
+    start_candidates = torch.where(progs < max_s)[0] if pytorch else np.where(progs < max_s)[0]
     # start_candidates = cluster_and_flatten(start_candidates, 2)
-    end_candidates = np.where(progs > min_e)[0]
+    end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs > min_e)[0]
     # end_candidates = cluster_and_flatten(end_candidates, 2)
     dets = []
     scores = []
@@ -108,69 +112,19 @@ def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, sc
         for end in end_candidates:
             this_action_length = end - start + 1
             if this_action_length > min_L:
-                score = score_progression_proposal(progs[start:end+1], method)
+                score = score_progression_proposal(progs[start:end + 1], method)
                 if score > score_threshold:
                     dets.append([start, end])
                     scores.append(score)
 
-    dets = np.array(dets)
-    scores = np.array(scores)
-    descending = scores.argsort()[::-1]
+    dets = torch.tensor(dets) if pytorch else np.array(dets)
+    scores = torch.tensor(scores) if pytorch else np.array(scores)
+    descending = -scores.argsort()
     dets = dets[descending].reshape(-1, 2)
     scores = scores[descending]
-    return dets, scores
+    return (dets.cpu().numpy(), scores.cpu().numpy()) if pytorch else (dets, scores)
 
 
-# def nms_with_cls(proposals, threshold=0.0, top_k=np.inf):
-#     """NMS for temporal proposals.
-#
-#     Args:
-#         proposals (np.ndarray): Proposals generated by network.
-#         threshold (float): High threshold for soft nms.
-#         top_k (int): Top k values to be considered.
-#
-#     Returns:
-#         np.ndarray: The updated proposals.
-#     """
-#     if proposals.size == 0:
-#         return proposals
-#     proposals = proposals[proposals[:, -1].argsort()[::-1]]
-#     tclass = proposals[:, 0]
-#     tstart = proposals[:, 1]
-#     tend = proposals[:, 2]
-#     tscore = proposals[:, 3]
-#     rclass = []
-#     rstart = []
-#     rend = []
-#     rscore = []
-#
-#
-#     while max(tscore, default=0) > 0 and len(rscore) < top_k:
-#         max_index = np.argmax(tscore)
-#         max_score = tscore[max_index]
-#         max_start = tstart[max_index]
-#         max_end = tend[max_index]
-#         max_cls = tclass[max_index]
-#
-#         rstart.append(max_start)
-#         rend.append(max_end)
-#         rscore.append(max_score)
-#         rclass.append(max_cls)
-#
-#         tstart = np.delete(tstart, max_index)
-#         tend = np.delete(tend, max_index)
-#         tscore = np.delete(tscore, max_index)
-#         tclass = np.delete(tclass, max_index)
-#
-#         iou_list = temporal_iou(max_start, max_end, tstart, tend)
-#         tscore[iou_list > threshold] = 0
-#
-#     rstart = np.array(rstart).reshape(-1, 1)
-#     rend = np.array(rend).reshape(-1, 1)
-#     rscore = np.array(rscore).reshape(-1, 1)
-#     rclass = np.array(rclass).reshape(-1, 1)
-#     remained = np.concatenate((rclass, rstart, rend, rscore), axis=1)
-#     return remained
 def nms1d(dets, scores, iou_thr=0.0, top_k=np.inf, return_idx=False, backend='numpy'):
     """NMS for temporal proposals.
 
@@ -254,3 +208,153 @@ def plot_prediction(video_prediction):
     plt.ylabel('Completeness')
     plt.grid()
     plt.show()
+
+
+def eval_ap(detections, gt_by_cls, iou_range, return_loc_cls=False):
+    """ **** This function is revised from the one with the same name in mmaction2.localization.ssn_utils ****
+    Evaluate mean average precisions (mAP) and classification accuracy (Cls. acc.) of the located samples.
+    Args:
+        detections (dict): Results of detections.
+        gt_by_cls (dict): Information of groudtruth.
+        iou_range (list or numpy.array): Ranges of iou.
+        return_loc_cls (boolean): Return loc_precision and cls_accuracy if true, which two decompose the mAP.
+
+    Returns:
+        list: Average precision values of classes at ious.
+    """
+    ap_values = np.zeros((len(detections), len(iou_range)))
+    cls_accuracy = np.ones((len(detections), len(iou_range)))
+    loc_precision = np.ones(len(iou_range))
+
+    for class_idx in detections.keys():
+        tps = []
+        for class_idx_x in detections.keys():
+            # compute ap
+            ap, tp = average_precision_at_temporal_iou(gt_by_cls[class_idx_x],
+                                                       detections[class_idx],
+                                                       iou_range,
+                                                       return_tp=True)
+            if class_idx_x == class_idx:
+                ap_values[class_idx, :] = ap
+                if not return_loc_cls:
+                    break
+            tps.append(tp)
+        tps = np.stack(tps)
+        if return_loc_cls:
+            # compute cls_accuracy
+            for iou_idx, min_overlap in enumerate(iou_range):
+                tps_of_iou = tps[:, iou_idx, :]
+                detection_of_cls = detections[class_idx]
+                detection_of_cls_sorted = detection_of_cls[detection_of_cls[:, 4].astype(float).argsort()[::-1]]
+                detections_located = detection_of_cls_sorted[np.where(tps_of_iou.any(axis=0))[0]]
+                cls_accuracy[class_idx, iou_idx] = average_precision_at_temporal_iou(gt_by_cls[class_idx],
+                                                                                     detections_located,
+                                                                                     [min_overlap])
+            # for iou_idx, min_overlap in enumerate(iou_range):
+            # tps_of_iou = tps[:, iou_idx, :]
+            # tps_of_located = tps_of_iou[:, np.where(tps_of_iou.any(axis=0))[0]]
+            # num_located = tps_of_located.shape[-1]
+            # if tps_of_located.shape[-1] > 0:
+            #     num_cls = np.count_nonzero(tps_of_located[class_idx])
+            #     cls_accuracy[class_idx, iou_idx] = num_cls / num_located
+    if return_loc_cls:
+        # compute loc_precision
+        detections_ignore_cls = list(detections.values())
+        detections_ignore_cls = np.vstack(detections_ignore_cls)
+        gt_ignore_cls = {}
+        for gt_of_cls in gt_by_cls.values():
+            for video, gt in gt_of_cls.items():
+                gt_ignore_cls.setdefault(video, []).extend(gt)
+        loc_precision = average_precision_at_temporal_iou(gt_ignore_cls,
+                                                          detections_ignore_cls,
+                                                          iou_range)
+    return (ap_values, loc_precision, cls_accuracy) if return_loc_cls else ap_values
+
+
+def average_precision_at_temporal_iou(ground_truth,
+                                      prediction,
+                                      temporal_iou_thresholds=(np.linspace(
+                                          0.5, 0.95, 10)),
+                                      return_tp=False):
+    """**** This function is revised from the one with the same name in mmaction2.core.evaluation.accuracy ****
+    Compute average precision (in detection task) between ground truth and
+    predicted data frames. If multiple predictions match the same predicted
+    segment, only the one with highest score is matched as true positive. This
+    code is greatly inspired by Pascal VOC devkit.
+
+    Args:
+        ground_truth (dict): Dict containing the ground truth instances.
+            Key: 'video_id'
+            Value (np.ndarray): 1D array of 't-start' and 't-end'.
+        prediction (np.ndarray): 2D array containing the information of
+            proposal instances, including 'video_id', 'class_id', 't-start',
+            't-end' and 'score'.
+        temporal_iou_thresholds (np.ndarray): 1D array with temporal_iou
+            thresholds. Default: ``np.linspace(0.5, 0.95, 10)``.
+        return_tp (Boolean): Return tp if true
+
+    Returns:
+        np.ndarray: 1D array of average precision score.
+    """
+    ap = np.zeros(len(temporal_iou_thresholds), dtype=np.float32)
+    if len(prediction) < 1:
+        return ap
+
+    num_gts = 0.
+    lock_gt = dict()
+    for key in ground_truth:
+        lock_gt[key] = np.ones(
+            (len(temporal_iou_thresholds), len(ground_truth[key]))) * -1
+        num_gts += len(ground_truth[key])
+
+    # Sort predictions by decreasing score order.
+    prediction = np.array(prediction)
+    scores = prediction[:, 4].astype(float)
+    sort_idx = np.argsort(scores)[::-1]
+    prediction = prediction[sort_idx]
+
+    # Initialize true positive and false positive vectors.
+    tp = np.zeros((len(temporal_iou_thresholds), len(prediction)),
+                  dtype=np.int32)
+    fp = np.zeros((len(temporal_iou_thresholds), len(prediction)),
+                  dtype=np.int32)
+
+    # Assigning true positive to truly grount truth instances.
+    for idx, this_pred in enumerate(prediction):
+
+        # Check if there is at least one ground truth in the video.
+        if this_pred[0] in ground_truth:
+            this_gt = np.array(ground_truth[this_pred[0]], dtype=float)
+        else:
+            fp[:, idx] = 1
+            continue
+
+        t_iou = pairwise_temporal_iou(this_pred[2:4].astype(float), this_gt)
+        # We would like to retrieve the predictions with highest t_iou score.
+        t_iou_sorted_idx = t_iou.argsort()[::-1]
+        for t_idx, t_iou_threshold in enumerate(temporal_iou_thresholds):
+            for jdx in t_iou_sorted_idx:
+                if t_iou[jdx] < t_iou_threshold:
+                    fp[t_idx, idx] = 1
+                    break
+                if lock_gt[this_pred[0]][t_idx, jdx] >= 0:
+                    continue
+                # Assign as true positive after the filters above.
+                tp[t_idx, idx] = 1
+                lock_gt[this_pred[0]][t_idx, jdx] = idx
+                break
+
+            if fp[t_idx, idx] == 0 and tp[t_idx, idx] == 0:
+                fp[t_idx, idx] = 1
+
+    tp_cumsum = np.cumsum(tp, axis=1).astype(np.float32)
+    fp_cumsum = np.cumsum(fp, axis=1).astype(np.float32)
+    recall_cumsum = tp_cumsum / num_gts
+
+    precision_cumsum = tp_cumsum / (tp_cumsum + fp_cumsum)
+
+    for t_idx in range(len(temporal_iou_thresholds)):
+        ap[t_idx] = interpolated_precision_recall(precision_cumsum[t_idx, :],
+                                                  recall_cumsum[t_idx, :])
+
+    return (ap, tp) if return_tp else ap

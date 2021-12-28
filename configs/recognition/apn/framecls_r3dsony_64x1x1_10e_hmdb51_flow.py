@@ -111,4 +111,4 @@ work_dir = './work_dirs/framecls_r3dsony_64x1x1_10e_hmdb51_flow/'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
-output_config = dict(out=f'{work_dir}/results.json')
+output_config = dict(out=f'{work_dir}/progressions.pkl')
