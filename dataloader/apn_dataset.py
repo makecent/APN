@@ -133,7 +133,7 @@ class APNDataset(Dataset):
                         line_split[4]) if not self.proposal_mode else 0
 
                     if self.modality != 'Video':
-                        video_name = '.'.join(video_name.split('.')[:-1])
+                        video_name = video_name.rsplit('.', 1)[0]
                     gt_infos.setdefault(class_label, {}).setdefault(video_name,
                                                                     []).append(
                         [start_frame, end_frame])
@@ -169,7 +169,7 @@ class APNDataset(Dataset):
                         continue
 
                     if self.modality != 'Video':
-                        video_name = '.'.join(video_name.rsplit('.', 1)[0])
+                        video_name = video_name.rsplit('.', 1)[0]
                     video_name = osp.join(data_prefix, video_name)
 
                     for frm_idx in range(start_frame, end_frame + 1):
