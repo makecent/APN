@@ -95,5 +95,5 @@ class APN(BaseTAGClassifier):
         progressions = self.cls_head.loss.test_output(output)
         if progression_label is not None:
             # in validation stage, we remove uncorrelated progressions (useless for computing MAE) to save memory
-            progressions = get_correlated_progressions(progressions, class_label)
+            progressions = get_correlated_progressions(progressions, class_label).cpu().numpy()
         return progressions
