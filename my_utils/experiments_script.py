@@ -38,7 +38,7 @@ def evaluate_detections(cfg_file="configs/localization/apn/apn_coral_r3dsony_32x
     for iou, acc_iou in zip(iou_range, mAP_wi_cls):
         eval_results = ds.update_and_print_eval(eval_results, acc_iou,
                                                 f'wi_cls@{iou:.01f}')
-evaluate_detections()
+# evaluate_detections()
 
 
 # # Validate
@@ -117,13 +117,14 @@ evaluate_detections()
 
 def mean_fusion():
     # load results
-    main_cfg = 'work_dirs/apn_coral+random_r3dsony_32x4_10e_thumos14_flow/progressions.pkl'
-    ass_cfg = 'work_dirs/apn_coral+random_r3dsony_32x4_10e_thumos14_rgb/progressions.pkl'
-    save_dir = main_cfg.rsplit('/', 1)[0]
+    main_cfg = 'configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py'
+    ass_cfg = 'configs/localization/apn//apn_coral+random_r3dsony_32x4_10e_thumos14_rgb.py'
+    main_dir = f"work_dirs/{main_cfg.split('/')[-1].split('.')[0]}"
+    ass_dir = f"work_dirs/{ass_cfg.split('/')[-1].split('.')[0]}"
 
-    with open(main_cfg, 'rb') as f:
+    with open(f"{main_dir}/progressions.pkl", 'rb') as f:
         results_first = pickle.load(f)
-    with open(ass_cfg, 'rb') as f:
+    with open(f"{ass_dir}/progressions.pkl", 'rb') as f:
         results_second = pickle.load(f)
 
     def take_mean(list_of_prog):
@@ -132,16 +133,16 @@ def mean_fusion():
         return mean.tolist()
 
     results = take_mean([results_first, results_second])
-    dump(results, f'{save_dir}/mean_fuse/rgb+flow_progressions.pkl')
+    dump(results, f'{main_dir}/mean_fuse/rgb+flow_progressions.pkl')
     del results_first, results_second, results
 
     evaluate_results(cfg_file=main_cfg,
-                     results_file=f'{save_dir}/mean_fuse/mean_progressions.pkl',
+                     results_file=f'{main_dir}/mean_fuse/rgb+flow_progressions.pkl',
                      metric_options_override=dict(
                          mAP=dict(
-                             dump_detections=f'{save_dir}/mean_fuse/rgb+flow_detections.pkl',
-                             dump_evaluation=f'{save_dir}/mean_fuse/rgb+flow_evaluation.json')))
-# mean_fusion()
+                             dump_detections=f'{main_dir}/mean_fuse/rgb+flow_detections.pkl',
+                             dump_evaluation=f'{main_dir}/mean_fuse/rgb+flow_evaluation.json')))
+mean_fusion()
 
 
 # # ##%  Group Fusion
