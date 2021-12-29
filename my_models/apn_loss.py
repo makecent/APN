@@ -92,10 +92,10 @@ class ApnMAELoss(ApnBaseLoss):
                                max=1, min=0)
         correlated_loss = l1_loss(indexed_output, progression_label.squeeze(-1))
         uncorrelated_progs_sum = output.sum() - indexed_output.sum()
-        random_sum_target = tensor((num_action - 1) * num_sample * 0.5)
+        random_sum_target = tensor((num_action - 1) * num_sample * 0.5, device=output.device)
         uncorrelated_loss = l1_loss(uncorrelated_progs_sum,
                                     random_sum_target) / (
-                                        (num_action - 1) * num_sample)
+                                    (num_action - 1) * num_sample)
         loss = correlated_loss + uncorrelated_loss
         return loss
 
@@ -154,7 +154,7 @@ class ApnCELoss(ApnBaseLoss):
         uncorrelated_progs_sum = self.test_output(output,
                                                   return_tensor=True).sum() - correlated_prog_sum
         random_sum_target = tensor(
-            (num_action - 1) * num_sample * ((num_stage - 1) / 2))
+            (num_action - 1) * num_sample * ((num_stage - 1) / 2), device=output.device)
         uncorrelated_loss = l1_loss(uncorrelated_progs_sum,
                                     random_sum_target) / tensor(
             (num_action - 1) * num_sample * (num_stage - 1))
@@ -235,7 +235,7 @@ class ApnBCELoss(ApnBaseLoss):
 
         correlated_loss = batch_correlated_loss / num_sample
         random_sum_target = tensor(
-            (num_action - 1) * num_sample * (num_stage / 2))
+            (num_action - 1) * num_sample * (num_stage / 2), device=output.device)
         uncorrelated_loss = l1_loss(batch_uncorrelated_progs_sum,
                                     random_sum_target)
         uncorrelated_loss = uncorrelated_loss / tensor(
@@ -287,7 +287,7 @@ class ApnSORDLoss(ApnCELoss):
         for output_e, target_progression, target_class in zip(output,
                                                               progression_label,
                                                               class_label.squeeze(
-                                                                      -1)):
+                                                                  -1)):
             target_output = zeros(num_action, 1).cuda()
             target_output[target_class] = target_progression
             distance = sqrt(abs(stage_matrix - target_output).float())
@@ -343,8 +343,8 @@ class ApnCORALLoss(ApnBaseLoss):
             correlated_output = output_e[target_class.squeeze()]
             correlated_loss = binary_cross_entropy(correlated_output,
                                                    target_progression)
-            correlated_prog = sigmoid((
-                                                  correlated_output - 0.5) * 10).sum()  ## mimic the step function: >0.5 then 1 otherwise 0
+            # mimic the step function: >0.5 then 1 otherwise 0
+            correlated_prog = sigmoid((correlated_output - 0.5) * 10).sum()
             uncorrelated_progs_sum = sigmoid(
                 (output_e - 0.5) * 10).sum() - correlated_prog
 
@@ -353,7 +353,7 @@ class ApnCORALLoss(ApnBaseLoss):
 
         correlated_loss = batch_correlated_loss / num_sample
         random_sum_target = tensor(
-            (num_action - 1) * num_sample * (num_stage / 2))
+            (num_action - 1) * num_sample * (num_stage / 2), device=output.device)
         uncorrelated_loss = l1_loss(batch_uncorrelated_progs_sum,
                                     random_sum_target) / random_sum_target
         loss = correlated_loss + 1 * uncorrelated_loss
@@ -366,7 +366,6 @@ class ApnCORALLoss(ApnBaseLoss):
         progressions = torch.count_nonzero(output > 0.5, dim=-1)
         progressions = progressions * 100 / num_stage
         return progressions
-
 
 # @LOSSES.register_module()
 # class ApnTwoLoss(BaseWeightedLoss):
