@@ -9,7 +9,7 @@ from dataloader.apn_utils import uniform_1d_sampling, eval_ap
 from my_utils.evaluation import evaluate_results
 
 
-def evaluate_detections(cfg_file="configs/localization/apn/apn_coral_r3dsony_16x1_10e_thumos14_flow.py",
+def evaluate_detections(cfg_file="configs/localization/apn/apn_coral_r3dsony_32x1_10e_thumos14_flow.py",
                         detections_file="auto"):
     # Init
     cfg = Config.fromfile(cfg_file)
@@ -38,8 +38,6 @@ def evaluate_detections(cfg_file="configs/localization/apn/apn_coral_r3dsony_16x
     for iou, acc_iou in zip(iou_range, mAP_wi_cls):
         eval_results = ds.update_and_print_eval(eval_results, acc_iou,
                                                 f'wi_cls@{iou:.01f}')
-
-
 evaluate_detections()
 
 

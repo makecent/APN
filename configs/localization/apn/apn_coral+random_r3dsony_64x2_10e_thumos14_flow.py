@@ -4,12 +4,9 @@ _base_ = [
     './_base_/default_runtime.py',
 ]
 
-# Change defaults
-model = dict(cls_head=dict(loss=dict(uncorrelated_progs='ignore')))
-
 # input configuration
 clip_len = 64
-frame_interval = 1
+frame_interval = 2
 
 # dataset settings
 dataset_type = 'APNDataset'
@@ -82,7 +79,7 @@ data = dict(
     ))
 
 # output settings
-work_dir = './work_dirs/apn_coral_r3dsony_64x1_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_coral_r3dsony_64x2_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # evaluation config

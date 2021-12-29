@@ -22,7 +22,7 @@ def parse_args():
     return args
 
 
-def evaluate_results(cfg_file="configs/localization/apn/apn_coral_r3dsony_16x1_10e_thumos14_flow.py",
+def evaluate_results(cfg_file="configs/localization/apn/apn_coral+random_r3dsony_16x1_10e_thumos14_flow.py",
                      results_file='',
                      compute_MAE=False,
                      metric_options_override=dict(mAP=dict(
