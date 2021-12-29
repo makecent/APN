@@ -4,11 +4,8 @@ _base_ = [
     './_base_/default_runtime.py',
 ]
 
-# Change defaults
-model = dict(cls_head=dict(loss=dict(uncorrelated_progs='ignore')))
-
 # input configuration
-clip_len = 48
+clip_len = 64
 frame_interval = 1
 
 # dataset settings
@@ -53,7 +50,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=8,
+    videos_per_gpu=6,
     workers_per_gpu=8,
     train=dict(
         type=dataset_type,
@@ -82,7 +79,7 @@ data = dict(
     ))
 
 # output settings
-work_dir = './work_dirs/apn_coral_r3dsony_48x1_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_coral_r3dsony_64x1_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # evaluation config

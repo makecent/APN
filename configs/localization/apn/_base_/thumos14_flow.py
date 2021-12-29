@@ -6,9 +6,9 @@ frame_interval = 4
 dataset_type = 'APNDataset'
 data_root = 'my_data/thumos14'
 
-data_root_train = (data_root + '/rawframes/train',
+data_train = (data_root + '/rawframes/train',
               data_root + '/rawframes/val')
-data_root_val = data_root + '/rawframes/test'
+data_val = data_root + '/rawframes/test'
 
 ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
                   data_root + '/annotations/apn/apn_val.csv')
@@ -55,7 +55,7 @@ data = dict(
         type=dataset_type,
         ann_files=ann_file_train,
         pipeline=train_pipeline,
-        data_prefixes=data_root_train,
+        data_prefixes=data_train,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
     ),
@@ -63,7 +63,7 @@ data = dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=val_pipeline,
-        data_prefixes=data_root_val,
+        data_prefixes=data_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
     ),
@@ -71,8 +71,8 @@ data = dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=test_pipeline,
-        data_prefixes=data_root_val,
+        data_prefixes=data_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
-        untrimmed=True,
+        untrimmed=True
     ))

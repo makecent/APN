@@ -169,7 +169,7 @@ class APNDataset(Dataset):
                         continue
 
                     if self.modality != 'Video':
-                        video_name = '.'.join(video_name.split('.')[:-1])
+                        video_name = '.'.join(video_name.rsplit('.', 1)[0])
                     video_name = osp.join(data_prefix, video_name)
 
                     for frm_idx in range(start_frame, end_frame + 1):
