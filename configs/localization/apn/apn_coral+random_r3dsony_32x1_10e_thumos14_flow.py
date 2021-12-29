@@ -4,9 +4,6 @@ _base_ = [
     './_base_/default_runtime.py',
 ]
 
-# Change defaults
-model = dict(cls_head=dict(loss=dict(uncorrelated_progs='ignore')))
-
 # input configuration
 clip_len = 32
 frame_interval = 1
