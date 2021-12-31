@@ -79,7 +79,7 @@ data = dict(
     ))
 
 # output settings
-work_dir = './work_dirs/apn_coral_r3dsony_48x1_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_coral+random_r3dsony_48x1_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # evaluation config
