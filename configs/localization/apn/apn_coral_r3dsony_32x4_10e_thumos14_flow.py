@@ -88,6 +88,7 @@ output_config = dict(out=f'{work_dir}/progressions.pkl')
 # evaluation config
 eval_config = dict(
     metric_options=dict(
+        metric='mAP',
         mAP=dict(
             search=dict(
                 min_e=60,

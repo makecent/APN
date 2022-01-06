@@ -14,6 +14,7 @@ output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # evaluation config
 eval_config = dict(
+    metric='mAP',
     metric_options=dict(
         mAP=dict(
             search=dict(
