@@ -46,8 +46,8 @@ def evaluate_results(cfg_file="configs/localization/apn/apn_coral+random_r3dsony
     if compute_MAE:
         # Compute MAE
         warnings.warn(
-            "The below MAE is computed based on the derived results, which may come from a down-sampled datasets. \
-            For an accurate MAE, pls refer to the 'validation MAE' occurs in the training process")
+            "The below MAE is computed based on the derived results, which may come from a down-sampled datasets. "
+            "For an accurate MAE, pls refer to the 'validation MAE' occurs in the training process")
         MAE, pv_trimmed = ds.get_MAE_on_untrimmed_results(results, return_pv=True)
         pv = np.var(results, axis=-1).mean()
         test_sampling = ds.test_sampling
@@ -66,8 +66,9 @@ def evaluate_results(cfg_file="configs/localization/apn/apn_coral+random_r3dsony
                       metrics='mAP',
                       metric_options=metric_options)
     eval_results.update(mAP)
+    print(f"mAP@0.5:                     {mAP['mAP@0.5']:.2%}")
     execution_time = time.time() - before
-    print(f"Execution Time:               {execution_time} seconds")
+    print(f"Execution Time:              {execution_time:.2f} seconds")
 
 
 if __name__ == '__main__':
