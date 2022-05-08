@@ -1,5 +1,5 @@
 # APN
-This is the official repoistory of the paper **"Action Progression Network for Temporal Action Localization in Videos"**. Our model achives **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner.
+This is the official repoistory of the paper **"Action Progression Network for Temporal Action Localization in Videos"**. Our model achieves **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner.
 
 ![apn_framework_v2](https://user-images.githubusercontent.com/42603768/167289156-e1748bc1-a8e1-4bcf-93f8-2ae0e2dc4d99.png)
 
@@ -19,10 +19,45 @@ pip install future tensorboard
 # Prepare Data
 [Sign on](https://docs.google.com/forms/d/e/1FAIpQLScs9davISAtYQS7SEF5qQNu0jUpLzNH3aHmPfuqk2q1VYDkmw/viewform) the THUMOS14 to get the passwd. 
 Download the our processed dataset: [THUMOS14 download](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/Etnq-pgKYRhFj2G2WEsc33IBseulKby2Dhbhnc9K0BHZ1Q?e=4KqS4m).
+The folder structure should be like:
+```shell
+APN
+|-- configs
+|-- ...
+|-- my_data
+|   |-- thumos14
+|   |   |-- annotations
+|   |   |   |-- apn
+|   |   |   |   |-- apn_train.csv
+|   |   |   |   |-- apn_val.csv
+|   |   |   |   |-- apn_test.csv
+|   |   |-- rawframes
+|   |   |   |-- train
+|   |   |   |   |-- v_BaseballPitch_g01_c01
+|   |   |   |   |   |-- img_00000.jpg
+|   |   |   |   |   |-- img_00001.jpg
+|   |   |   |   |   |-- ...
+|   |   |   |   |   |-- img_00106.jpg
+|   |   |   |   |   |-- flow_x_00000.jpg
+|   |   |   |   |   |-- flow_x_00001.jpg
+|   |   |   |   |   |-- ...
+|   |   |   |   |   |-- flow_x_00105.jpg
+|   |   |   |   |   |-- flow_y_00000.jpg
+|   |   |   |   |   |-- flow_y_00001.jpg
+|   |   |   |   |   |-- ...
+|   |   |   |   |   |-- flow_y_00105.jpg
+|   |   |   |   |-- ...
+|   |   |   |-- val
+|   |   |   |   |-- video_validation_0000051
+|   |   |   |   |-- ...
+|   |   |   |-- test
+|   |   |   |   |-- video_test_0000004
+|   |   |   |   |-- ...
 
 + Optical flows (TVL1) and RGB frames are included.
 + Only videos with temporal annotations (20 classes) are keeped.
 + Some wrong annotations are removed.
+```
 
 # Training
 
