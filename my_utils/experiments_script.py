@@ -1,11 +1,8 @@
 import numpy as np
-import json
 import pickle
-import os
-import time
 from mmcv import dump, Config
 from mmaction.datasets import build_dataset
-from dataloader.apn_utils import uniform_1d_sampling, eval_ap
+from custom_modules.dataloader import eval_ap
 from my_utils.evaluation import evaluate_results
 
 

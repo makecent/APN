@@ -4,10 +4,9 @@ from torch.nn.functional import binary_cross_entropy, l1_loss, nll_loss, \
 import torch
 from torch import sigmoid, softmax, clamp, log_softmax, tensor, argmax, zeros, \
     sqrt, arange
-import numpy as np
 from mmaction.models.builder import LOSSES
 from mmaction.models.losses import BaseWeightedLoss
-from my_models.apn import get_correlated_progressions
+from .apn import get_correlated_progressions
 
 
 @LOSSES.register_module()
