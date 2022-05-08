@@ -17,7 +17,7 @@ pip install future tensorboard
 ```
 
 # Prepare Data
-[Download](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/Eue7ALiNQ1NDteHBZXiLuv8B_Q1eM0OMQt1tY3-yHWylGw?e=5ZNyhG) our processed THUMOS14 raw frames, and put them under the repo root. You are suggested to put the data in other palce (SSD would be best) and set a symbolic link here pointing to the data path.
+Download the pre-processed THUMOS14 [raw frames](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/Eue7ALiNQ1NDteHBZXiLuv8B_Q1eM0OMQt1tY3-yHWylGw?e=5ZNyhG) and [the annotations (APN format)](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/EqklxouUfZpDgLSQRWEfT4MBcCg1VS6PaJKtjEu8kXAcMw?e=0Qo4ys), and put them under the repo root. You are suggested to put the data in other palce (SSD would be best) and set a symbolic link here pointing to the data path.
 The folder structure should be like:
 ```shell
 APN
