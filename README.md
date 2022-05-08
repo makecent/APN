@@ -17,8 +17,7 @@ pip install future tensorboard
 ```
 
 # Prepare Data
-[Sign on](https://docs.google.com/forms/d/e/1FAIpQLScs9davISAtYQS7SEF5qQNu0jUpLzNH3aHmPfuqk2q1VYDkmw/viewform) the THUMOS14 to get the passwd. 
-Download the our processed dataset: [THUMOS14 download](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/Etnq-pgKYRhFj2G2WEsc33IBseulKby2Dhbhnc9K0BHZ1Q?e=4KqS4m).
+[Download](https://connectpolyu-my.sharepoint.com/:f:/g/personal/19074484r_connect_polyu_hk/Eue7ALiNQ1NDteHBZXiLuv8B_Q1eM0OMQt1tY3-yHWylGw?e=5ZNyhG) our processed THUMOS14 raw frames, and put them under the repo root. You are suggested to put the data in other palce (SSD would be best) and set a symbolic link here pointing to the data path.
 The folder structure should be like:
 ```shell
 APN
@@ -53,11 +52,10 @@ APN
 |   |   |   |-- test
 |   |   |   |   |-- video_test_0000004
 |   |   |   |   |-- ...
-
+```
 + Optical flows (TVL1) and RGB frames are included.
 + Only videos with temporal annotations (20 classes) are keeped.
-+ Some wrong annotations are removed.
-```
++ Some wrong annotated videos are removed.
 
 # Training
 
