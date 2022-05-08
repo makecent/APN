@@ -263,6 +263,12 @@ class APNDataset(Dataset):
         results['start_index'] = self.start_index
         return self.pipeline(results)
 
+    def get_progression_labels(self, denormalized=True):
+        progression_labels = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
+        if denormalized:
+            progression_labels *= 100
+        return progression_labels
+
     @staticmethod
     def update_and_print_eval(eval_results, result, name, logger=None, decimals=4):
         eval_results[name] = result

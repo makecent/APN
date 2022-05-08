@@ -17,7 +17,7 @@ class FetchStackedFrames(object):
         self.out_of_bound_opt = out_of_bound_opt
         self.test_mode = test_mode
         self.num_clips = num_clips
-        assert self.out_of_bound_opt in ['loop', 'repeat_last']
+        assert self.out_of_bound_opt in ['loop', 'clamp']
 
     def __call__(self, results):
         """Perform the FetchFrames loading.
