@@ -1,12 +1,9 @@
 # imports
-custom_imports = dict(imports=['my_models', 'dataloader'], allow_failed_imports=False)
+custom_imports = dict(imports=['custom_modules'], allow_failed_imports=False)
 
 # others
 checkpoint_config = dict(interval=1)
 log_config = dict(interval=500, hooks=[dict(type='TensorboardLoggerHook'), dict(type='TextLoggerHook')])
-
-# validate
-evaluation = dict(metrics=['MAE'], save_best='MAE', rule='less')
 
 # runtime settings
 dist_params = dict(backend='nccl')
@@ -15,4 +12,8 @@ load_from = None
 resume_from = None
 workflow = [('train', 1)]
 
+# disable opencv multithreading to avoid system being overloaded
+opencv_num_threads = 0
+# set multi-process start method as `fork` to speed up the training
+mp_start_method = 'fork'
 

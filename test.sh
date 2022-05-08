@@ -7,4 +7,4 @@ CHECKPOINT="work_dirs/$DIR/$CHECKPOINT"
 GPU="${3:-2}"
 #OUT=${4:-"work_dirs/$DIR/progressions.pkl"}
 
-PYTHONPATH=$PWD:$PYTHONPATH mim test mmaction $CONFIG --checkpoint $CHECKPOINT --gpus $GPU --eval mAP --launcher pytorch ${@:4}
+PYTHONPATH=$PWD:$PYTHONPATH mim test mmaction $CONFIG --checkpoint $CHECKPOINT --gpus $GPU --eval mAP --launcher pytorch "${@:4}"

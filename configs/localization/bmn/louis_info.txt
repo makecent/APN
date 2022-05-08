@@ -1,3 +1,0 @@
-Note that after training, when gose to test. Remember to check function proposals2json in the activitynet_dataset.py. Because it involves a video_name = video_name[2:] which is specially work for activitynet but not for other e.g dfmad. For dfmad, please temproally manully modify it.
-
-The resulted progressions.pkl contain the proposals and their scores, but the proposals is in TIME unit. Which show the staring and ending second. Need manually decode
