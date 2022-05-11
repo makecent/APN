@@ -6,19 +6,17 @@ _base_ = [
 model = dict(
     type='APN',
     backbone=dict(
-        type='ResNet3d_sony',
-        init_cfg=dict(type='Pretrained',
-                      checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_rgb.pth'),
-        modality='rgb'),
+        type='MViTB'),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        in_channels=1024,
+        spatial_type='vit',
+        in_channels=768,
         dropout_ratio=0.5))
 
 # input configuration
-clip_len = 32
-frame_interval = 4
+clip_len = 16
+frame_interval = 8
 
 # dataset settings
 dataset_type = 'APNDataset'
@@ -39,6 +37,8 @@ train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
@@ -50,7 +50,8 @@ val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
@@ -59,7 +60,8 @@ val_pipeline = [
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -67,7 +69,7 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=10,
+    videos_per_gpu=8,
     workers_per_gpu=8,
     train=dict(
         type=dataset_type,
@@ -96,18 +98,22 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['MAE'], save_best='MAE', rule='less')
+evaluation = dict(interval=45060, metrics=['MAE'], save_best='MAE', rule='less', by_epoch=False)
 
 # optimizer
-optimizer = dict(type='Adam', lr=1e-04)  # this lr is used for 2 gpus
-optimizer_config = dict(grad_clip=None)
-
+optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.05, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
+optimizer_config = dict(grad_clip=dict(max_norm=1))
 # learning policy
-lr_config = dict(policy='fixed')
+lr_config = dict(policy='CosineAnnealing',
+                 min_lr_ratio=0.01,
+                 warmup='linear',
+                 warmup_ratio=0.01,
+                 warmup_iters=1,
+                 warmup_by_epoch=True)
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_coral+random_r3dsony_32x4_10e_thumos14_rgb/'
+work_dir = './work_dirs/apn_coral+random_mvit-b_16x8_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

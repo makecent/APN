@@ -59,6 +59,9 @@ class APNHead(nn.Module, metaclass=ABCMeta):
 
         if self.spatial_type == 'avg':
             self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        elif self.spatial_type == 'vit':
+            self.vit = True
+            self.avg_pool = nn.Identity()
 
         self.coral_fc = nn.Linear(self.in_channels, self.num_classes, bias=False)
         self.coral_bias = BiasLayer(self.num_classes, self.num_stages)
@@ -69,8 +72,10 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         constant_init(self.coral_bias, 0)
 
     def forward(self, x):
-        # [N, C, T', H', W']
+        # [N, C, T', H', W'] or [N, L, C]
         x = self.avg_pool(x)
+        if self.vit:
+            x = x[:, 0]
         # [N, C, 1, 1, 1]
         x = x.view(x.shape[0], -1)
         # [N, C]
