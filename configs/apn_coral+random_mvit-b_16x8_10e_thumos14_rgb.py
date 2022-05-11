@@ -101,7 +101,8 @@ data = dict(
 evaluation = dict(interval=45060, metrics=['MAE'], save_best='MAE', rule='less', by_epoch=False)
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.05, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
+optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.05,)
+# optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.05, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
 optimizer_config = dict(grad_clip=dict(max_norm=1))
 # learning policy
 lr_config = dict(policy='CosineAnnealing',
