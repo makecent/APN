@@ -98,7 +98,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(interval=45060, metrics=['MAE'], save_best='MAE', rule='less', by_epoch=False)
+evaluation = dict(interval=45060/4, metrics=['MAE'], save_best='MAE', rule='less', by_epoch=False)
 
 # optimizer
 optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.05,)
