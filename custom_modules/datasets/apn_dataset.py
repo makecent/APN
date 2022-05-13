@@ -289,3 +289,31 @@ class APNDataset(Dataset):
             result_dict[video_name] = dets_and_scores
 
         return result_dict
+
+    def get_MAE_on_untrimmed_results(self, results, return_pv=False):
+        """ Experimental function, compute MAE based on predicted progressions of untrimmed video"""
+        assert self.untrimmed
+        results = np.array(results)
+        cum_frames = 0
+        pre, gt, pv = [], [], []
+        for video_name, video_info in self.video_infos.items():
+            num_sampling = video_info['total_frames'] if self.test_sampling == 'full' else self.test_sampling
+            sampled_frame = np.linspace(0, video_info['total_frames'] - 1, num_sampling, dtype=int)
+            for action_start, action_end, class_label in video_info['gt_bboxes']:
+                action_frame = np.arange(action_start, action_end + 1)
+                progs = np.linspace(0, 1, len(action_frame))
+                sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
+                idx1 = sampled_idx[np.where(np.in1d(sampled_frame, action_frame))[0]]
+                idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
+                if idx1.size == 0:
+                    continue
+                pre_all_class = results[idx1 + cum_frames]
+                pv.append(np.var(pre_all_class, axis=-1))
+                pre.append(pre_all_class[:, class_label])
+                gt.append(progs[idx2] * self.num_stages)
+            cum_frames += self.test_sampling if self.test_sampling != 'full' else video_info['total_frames']
+        assert cum_frames == len(results)
+        pre, gt, pv = np.hstack(pre), np.hstack(gt), np.hstack(pv)
+        MAE = np.mean(np.abs(gt - pre))
+        PV = pv.mean()
+        return MAE if not return_pv else (MAE, PV)
