@@ -123,8 +123,8 @@ eval_config = dict(
         metrics='mAP',
         mAP=dict(
             search=dict(
-                min_e=60,
-                max_s=40,
+                min_e=80,
+                max_s=20,
                 min_L=60,
                 method='mse'),
             nms=dict(iou_thr=0.4),
