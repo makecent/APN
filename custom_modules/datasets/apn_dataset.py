@@ -299,10 +299,10 @@ class APNDataset(Dataset):
         for video_name, video_info in self.video_infos.items():
             num_sampling = video_info['total_frames'] if self.test_sampling == 'full' else self.test_sampling
             sampled_frame = np.linspace(0, video_info['total_frames'] - 1, num_sampling, dtype=int)
+            sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
             for action_start, action_end, class_label in video_info['gt_bboxes']:
                 action_frame = np.arange(action_start, action_end + 1)
                 progs = np.linspace(0, 1, len(action_frame))
-                sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
                 idx1 = sampled_idx[np.where(np.in1d(sampled_frame, action_frame))[0]]
                 idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
                 if idx1.size == 0:
