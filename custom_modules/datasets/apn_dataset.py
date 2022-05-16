@@ -9,7 +9,8 @@ from mmcv import dump
 from mmaction.datasets.builder import DATASETS
 from mmaction.datasets.pipelines import Compose
 from mmaction.localization.ssn_utils import eval_ap
-from .apn_utils import apn_detection_on_single_video, uniform_sampling_1d
+from mmaction.core import top_k_accuracy
+from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
 
 
 @DATASETS.register_module()
@@ -187,12 +188,13 @@ class APNDataset(Dataset):
             f'{len(results)} != {len(self)}')
 
         metrics = metrics if isinstance(metrics, (list, tuple)) else [metrics]
-        allowed_metrics = ['MAE', 'mAP']
+        allowed_metrics = ['top_k_accuracy', 'MAE', 'mAP']
         for metric in metrics:
             if metric not in allowed_metrics:
                 raise KeyError(f'metric {metric} is not supported')
 
-        results = np.array(results)
+        cls_score, progression = map(np.array, zip(*results))
+        cls_ind = cls_score.argmax(axis=-1)
         eval_results = {}
         for metric in metrics:
             msg = f'Evaluating {metric}...'
@@ -200,9 +202,29 @@ class APNDataset(Dataset):
                 msg = '\n' + msg
             print_log(msg, logger=logger)
 
+            if metric == 'top_k_accuracy':
+                assert self.untrimmed is False, "To compute accuracy, the dataset must be trimmed"
+                topk = metric_options.setdefault('top_k_accuracy', {}).setdefault('topk', (1, 5))
+                if not isinstance(topk, (int, tuple)):
+                    raise TypeError('topk must be int or tuple of int, '
+                                    f'but got {type(topk)}')
+                if isinstance(topk, int):
+                    topk = (topk,)
+
+                cls_label = self.get_class_labels()
+                top_k_acc = top_k_accuracy(cls_score, cls_label, topk)
+                log_msg = []
+                for k, acc in zip(topk, top_k_acc):
+                    eval_results[f'top{k}_acc'] = acc
+                    log_msg.append(f'\ntop{k}_acc\t{acc:.4f}')
+                log_msg = ''.join(log_msg)
+                print_log(log_msg, logger=logger)
+                continue
+
             if metric == 'MAE':
-                prog_labels = self.get_progression_labels(denormalized=True)
-                MAE = np.abs(results - prog_labels).mean()
+                assert self.untrimmed is False, "To compute MAE, the dataset must be trimmed"
+                progression_label = self.get_progression_label(denormalized=True)
+                MAE = np.abs(progression - progression_label).mean()
                 eval_results = self.update_and_print_eval(eval_results, MAE, 'MAE', logger)
 
             if metric == 'mAP':
@@ -233,17 +255,15 @@ class APNDataset(Dataset):
     def format_detections(self, detections):
         """Format the detections to input to the predefined function 'eval_ap' in 'ssn_utils',"""
         formatted_detections = {}
-        for class_ind, data in self.gt_infos.items():
-            relative_videos = list(data.keys())
+        for class_ind in self.gt_infos.keys():
             det_by_c = []
-            for video_name in relative_videos:
+            for video_name in self.video_infos.keys():
                 det_by_v_by_c = detections[video_name][class_ind]
                 if det_by_v_by_c.size == 0:
                     continue
                 video_name = np.full((len(det_by_v_by_c), 1), video_name)
                 class_id = np.full((len(det_by_v_by_c), 1), class_ind)
-                det_by_v_by_c = np.hstack([video_name, class_id,
-                                           det_by_v_by_c + self.start_index])
+                det_by_v_by_c = np.hstack([video_name, class_id, det_by_v_by_c + self.start_index])
                 det_by_c.append(det_by_v_by_c)
             if len(det_by_c) == 0:
                 formatted_detections[class_ind] = np.empty((1, 5))
@@ -263,7 +283,11 @@ class APNDataset(Dataset):
         results['start_index'] = self.start_index
         return self.pipeline(results)
 
-    def get_progression_labels(self, denormalized=True):
+    def get_class_labels(self):
+        class_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
+        return class_label
+
+    def get_progression_label(self, denormalized=True):
         progression_labels = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
         if denormalized:
             progression_labels *= 100

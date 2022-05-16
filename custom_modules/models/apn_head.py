@@ -8,16 +8,16 @@ from mmcv.cnn import kaiming_init, normal_init, constant_init
 from mmaction.models.builder import HEADS, build_loss
 
 
-class BiasLayer(nn.Module, metaclass=ABCMeta):
-    def __init__(self, input_channel, num_bias):
-        super(BiasLayer, self).__init__()
-        self.input_channel = input_channel
-        self.num_bias = num_bias
-
-        self.bias = nn.Parameter(torch.zeros(input_channel, num_bias).float(), requires_grad=True)
-
-    def forward(self, x):
-        return x.unsqueeze(-1).repeat_interleave(self.num_bias, dim=-1) + self.bias
+# class BiasLayer(nn.Module, metaclass=ABCMeta):
+#     def __init__(self, input_channel, num_bias):
+#         super(BiasLayer, self).__init__()
+#         self.input_channel = input_channel
+#         self.num_bias = num_bias
+#
+#         self.bias = nn.Parameter(torch.zeros(input_channel, num_bias).float(), requires_grad=True)
+#
+#     def forward(self, x):
+#         return x.unsqueeze(-1).repeat_interleave(self.num_bias, dim=-1) + self.bias
 
 
 @HEADS.register_module()
@@ -39,42 +39,40 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  num_classes=20,
                  num_stages=100,
                  in_channels=2048,
-                 loss=dict(type='ApnCORALLoss', uncorrelated_progs='random'),
-                 spatial_type='avg',
+                 hid_channels=256,
+                 loss_cls=dict(type='CrossEntropyLoss'),
+                 loss_reg=dict(type='BCELossWithLogits'),
                  dropout_ratio=0.5):
         super().__init__()
 
         self.num_classes = num_classes
         self.in_channels = in_channels
-        self.loss = build_loss(loss)
+        self.hid_channels = hid_channels
+        self.loss_cls = build_loss(loss_cls)
+        self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages
-        self.spatial_type = spatial_type
         self.dropout_ratio = dropout_ratio
 
-        if self.dropout_ratio != 0:
+        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        if self.dropout_ratio > 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:
-            self.dropout = None
-        self.consensus = AvgConsensus(dim=1)
+            self.dropout = nn.Identity()
 
-        if self.spatial_type == 'avg':
-            self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
 
-        self.coral_fc = nn.Linear(self.in_channels, self.num_classes, bias=False)
-        self.coral_bias = BiasLayer(self.num_classes, self.num_stages)
-        self.layers = nn.Sequential(self.coral_fc, self.coral_bias)
+        self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
+        self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
 
     def init_weights(self):
+        kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
         kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
         constant_init(self.coral_bias, 0)
 
     def forward(self, x):
-        # [N, C, T', H', W'] or [N, L, C]
         x = self.avg_pool(x)
-        # [N, C, 1, 1, 1]
         x = x.view(x.shape[0], -1)
-        # [N, C]
-        if self.dropout is not None:
-            x = self.dropout(x)
-        score = self.layers(x)
-        return score
+        x = self.dropout(x)
+        cls_score = self.cls_fc(x)
+        reg_score = self.coral_fc(x) + self.coral_bias
+        return cls_score, reg_score

@@ -3,6 +3,35 @@ import torch
 from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
 
 
+def decode_progression(reg_score):
+    num_stage = reg_score.shape[-1]
+    if isinstance(reg_score, torch.Tensor):
+        progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
+    elif isinstance(reg_score, np.ndarray):
+        progression = np.count_nonzero(reg_score > 0.5, axis=-1)
+    else:
+        raise TypeError(f"unsupported reg_score type: {type(reg_score)}")
+    progression = progression * 100 / num_stage
+    return progression
+
+
+def progression_mae(reg_score, progression_label):
+    progression = decode_progression(reg_score)
+    progression_label = decode_progression(progression_label)
+    if isinstance(reg_score, torch.Tensor):
+        mae = torch.abs(progression - progression_label)
+    elif isinstance(reg_score, np.ndarray):
+        mae = np.abs(progression - progression_label)
+    else:
+        raise TypeError(f"unsupported reg_score type: {type(reg_score)}")
+    return mae.mean()
+
+
+def binary_accuracy(pred, label):
+    acc = np.count_nonzero((pred > 0.5) == label) / label.size
+    return acc
+
+
 def uniform_sampling_1d(vector, num_sampling, return_idx=False):
     input_type = type(vector)
     if isinstance(vector, (list, tuple, range)):
