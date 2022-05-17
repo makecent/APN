@@ -99,11 +99,16 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
 
 # optimizer
-optimizer = dict(type='Adam', lr=1e-04)  # this lr is used for 2 gpus
-optimizer_config = dict(grad_clip=None)
-
+optimizer = dict(type='AdamW', lr=3e-4, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
+optimizer_config = dict(grad_clip=dict(max_norm=20))
 # learning policy
-lr_config = dict(policy='fixed')
+lr_config = dict(policy='CosineAnnealing',
+                 min_lr=0,
+                 warmup='linear',
+                 warmup_ratio=0.1,
+                 warmup_iters=1,
+                 warmup_by_epoch=True,
+                 by_epoch=False)
 total_epochs = 10
 
 # output settings
