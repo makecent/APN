@@ -1,16 +1,31 @@
 import copy
 import os.path as osp
-import numpy as np
-from multiprocessing import Pool, cpu_count
+from collections import namedtuple
 from itertools import repeat
-from torch.utils.data import Dataset
-from mmcv.utils import print_log
-from mmcv import dump
+from multiprocessing import Pool, cpu_count
+
+import numpy as np
+from mmaction.core import top_k_accuracy
 from mmaction.datasets.builder import DATASETS
 from mmaction.datasets.pipelines import Compose
 from mmaction.localization.ssn_utils import eval_ap
-from mmaction.core import top_k_accuracy
+from mmcv import dump
+from mmcv.utils import print_log
+from torch.utils.data import Dataset
+
 from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
+
+# Prediction = namedtuple('prediction', ('progression', 'cls_score'))
+class Prediction():
+    def __init__(self, results):
+        cls_score, progression = map(np.array, zip(*results))
+        self.cls_score = cls_score
+        self.progression = progression
+
+    def __len__(self):
+        return len(self.progression)
+    def __getitem__(self):
+        return self.t
 
 
 @DATASETS.register_module()
@@ -195,6 +210,7 @@ class APNDataset(Dataset):
 
         cls_score, progression = map(np.array, zip(*results))
         cls_ind = cls_score.argmax(axis=-1)
+        confidence = cls_score.max(axis=-1)
         eval_results = {}
         for metric in metrics:
             msg = f'Evaluating {metric}...'
@@ -222,15 +238,16 @@ class APNDataset(Dataset):
                 continue
 
             if metric == 'MAE':
-                assert self.untrimmed is False, "To compute MAE, the dataset must be trimmed"
-                progression_label = self.get_progression_label(denormalized=True)
-                MAE = np.abs(progression - progression_label).mean()
+                if self.untrimmed:
+                    MAE = self.get_MAE_on_untrimmed(progression)
+                else:
+                    MAE = self.get_MAE_on_trimmed(progression)
                 eval_results = self.update_and_print_eval(eval_results, MAE, 'MAE', logger)
 
             if metric == 'mAP':
                 assert self.untrimmed is True, "To compute mAP, the dataset must be untrimmed"
-                progs = self.split_results_by_video(results)
-                detections = self.action_detection_by_progs(progs, det_kwargs=metric_options.get('mAP', {}))
+                results_vs_video = self.split_results_by_video(results)
+                detections = self.apn_action_detection(results_vs_video, det_kwargs=metric_options.get('mAP', {}))
                 detections = self.format_detections(detections)
 
                 iou_range = np.arange(0.1, 1.0, .1)
@@ -242,15 +259,15 @@ class APNDataset(Dataset):
 
         return eval_results
 
-    def split_results_by_video(self, results):
-        progs_by_video = {}
+    def split_results_by_video(self, prediction):
+        prediction_vs_video = {}
         cum_frames = 0
         for video_name, data in self.video_infos.items():
-            p_by_video = results[cum_frames: cum_frames + self.test_sampling]
-            progs_by_video[video_name] = p_by_video
+            p_by_video = prediction[cum_frames: cum_frames + self.test_sampling]
+            prediction_vs_video[video_name] = p_by_video
             cum_frames += self.test_sampling
-        assert cum_frames == len(results), "total frames from 'video_infos' and 'results' not equal."
-        return progs_by_video
+        assert cum_frames == len(prediction), "total frames from 'video_infos' and 'results' not equal."
+        return prediction_vs_video
 
     def format_detections(self, detections):
         """Format the detections to input to the predefined function 'eval_ap' in 'ssn_utils',"""
@@ -287,12 +304,6 @@ class APNDataset(Dataset):
         class_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
         return class_label
 
-    def get_progression_label(self, denormalized=True):
-        progression_labels = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
-        if denormalized:
-            progression_labels *= 100
-        return progression_labels
-
     @staticmethod
     def update_and_print_eval(eval_results, result, name, logger=None, decimals=4):
         eval_results[name] = result
@@ -300,24 +311,30 @@ class APNDataset(Dataset):
         print_log(log_msg, logger=logger)
         return eval_results
 
-    def action_detection_by_progs(self, progressions, det_kwargs, nproc=cpu_count()):
+    def apn_action_detection(self, results, det_kwargs, nproc=cpu_count()):
         result_dict = {}
         with Pool(nproc) as pool:
-            rescale_rates = [video_info['rescale_rate'] for video_info in self.video_infos.values()]
-            video_names, progressions_by_video = zip(*progressions.items())
+            rescale_rate = [video_info['rescale_rate'] for video_info in self.video_infos.values()]
+            video_names, results = zip(*results.items())
             all_dets = pool.starmap(
                 apn_detection_on_single_video,
-                zip(progressions_by_video, rescale_rates, repeat(det_kwargs)))
+                zip(results, rescale_rate, repeat(det_kwargs)))
 
         for video_name, dets_and_scores in zip(video_names, all_dets):
             result_dict[video_name] = dets_and_scores
 
         return result_dict
 
-    def get_MAE_on_untrimmed_results(self, results, return_pv=False):
-        """ Experimental function, compute MAE based on predicted progressions of untrimmed video"""
+    def get_MAE_on_trimmed(self, progression):
+        progression_label = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
+        progression_label *= 100
+        MAE = (np.abs(progression_label - progression)).mean()
+        return MAE
+
+    def get_MAE_on_untrimmed(self, progression, return_pv=False):
+        """ Only action frames have progressions labels."""
         assert self.untrimmed
-        results = np.array(results)
+        progression = np.array(progression)
         cum_frames = 0
         pre, gt, pv = [], [], []
         for video_name, video_info in self.video_infos.items():
@@ -331,12 +348,12 @@ class APNDataset(Dataset):
                 idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
                 if idx1.size == 0:
                     continue
-                pre_all_class = results[idx1 + cum_frames]
+                pre_all_class = progression[idx1 + cum_frames]
                 pv.append(np.var(pre_all_class, axis=-1))
                 pre.append(pre_all_class[:, class_label])
                 gt.append(progs[idx2] * self.num_stages)
             cum_frames += self.test_sampling if self.test_sampling != 'full' else video_info['total_frames']
-        assert cum_frames == len(results)
+        assert cum_frames == len(progression)
         pre, gt, pv = np.hstack(pre), np.hstack(gt), np.hstack(pv)
         MAE = np.mean(np.abs(gt - pre))
         PV = pv.mean()

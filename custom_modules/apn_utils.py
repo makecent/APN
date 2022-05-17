@@ -90,27 +90,17 @@ def score_progression_proposal(proposal, method='mse', backend='numpy'):
     return score
 
 
-def apn_detection_on_single_video(progressions, rescale_rate=1.0, det_kwargs={}):
-    sampling = det_kwargs.get('sampling', None)  # experimental argument
+def apn_detection_on_single_video(results, rescale_rate=1.0, det_kwargs={}):
     search_kwargs = det_kwargs.get('search', {})
     nms_kwargs = det_kwargs.get('nms', {})
-
-    if sampling:  # experimental argument
-        assert isinstance(sampling, (int, float))
-        assert rescale_rate == 1.0, "'sampling' is just an experimental argument used to down-sampling 'full' results " \
-                                    "to investigate the impact of sampling with less time" \
-                                    "If you didn't 'test_sampling' as 'full', don't set this 'sampling' argument"
-        rescale_rate = len(progressions) / sampling
     search_kwargs['min_L'] /= rescale_rate
 
     dets_and_scores = []
-    for class_ind, progs_by_class in enumerate(progressions.T):
-        if sampling:
-            progs_by_class = uniform_sampling_1d(progs_by_class, sampling)
-        dets_by_class, scores_by_class = apn_detection_on_vector(progs_by_class, **search_kwargs)
-        dets_by_class = dets_by_class * rescale_rate
-        dets_by_class, scores_by_class = nms1d(dets_by_class, scores_by_class, **nms_kwargs)
-        dets_and_scores.append(np.hstack([dets_by_class, scores_by_class[:, None]]))
+    cls_score, progression = map(np.array, zip(*results))
+    dets, loc_confidence = apn_detection_on_vector(progression, **search_kwargs)
+    dets, loc_confidence = nms1d(dets, loc_confidence, **nms_kwargs)
+    dets = dets * rescale_rate
+    dets_and_scores.append(np.hstack([dets, loc_confidence[:, None]]))
     # set 'min_L' back for the following detection because dictionary objects are mutable.
     search_kwargs['min_L'] *= rescale_rate
 
