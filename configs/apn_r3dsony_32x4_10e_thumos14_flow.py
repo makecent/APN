@@ -21,7 +21,7 @@ clip_len = 32
 frame_interval = 4
 
 # dataset settings
-dataset_type = 'APNDataset'
+dataset_type = 'THUMOS14'
 data_root = 'my_data/thumos14'
 
 data_train = (data_root + '/rawframes/train',
@@ -111,15 +111,4 @@ work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
-eval_config = dict(
-    metric_options=dict(
-        metrics='mAP',
-        mAP=dict(
-            search=dict(
-                min_e=60,
-                max_s=40,
-                min_L=60,
-                method='mse'),
-            nms=dict(iou_thr=0.4),
-            dump_detections=f'{work_dir}/detections.pkl',
-            dump_evaluation=f'{work_dir}/evaluation.json')))
+eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))

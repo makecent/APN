@@ -62,11 +62,11 @@ def evaluate_results(cfg_file="configs/localization/apn/apn_coral+random_r3dsony
     metric_options = cfg.eval_config.metric_options
     if metric_options_override:
         metric_options.update(metric_options_override)
-    mAP = ds.evaluate(results,
+    aps = ds.evaluate(results,
                       metrics='mAP',
                       metric_options=metric_options)
-    eval_results.update(mAP)
-    print(f"mAP@0.5:                     {mAP['mAP@0.5']:.2%}")
+    eval_results.update(aps)
+    print(f"AP50:                     {eval_results['AP50']}")
     execution_time = time.time() - before
     print(f"Execution Time:              {execution_time:.2f} seconds")
 

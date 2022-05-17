@@ -1,31 +1,20 @@
 import copy
 import os.path as osp
-from collections import namedtuple
 from itertools import repeat
 from multiprocessing import Pool, cpu_count
-
+from collections import OrderedDict
 import numpy as np
 from mmaction.core import top_k_accuracy
 from mmaction.datasets.builder import DATASETS
 from mmaction.datasets.pipelines import Compose
-from mmaction.localization.ssn_utils import eval_ap
-from mmcv import dump
+from mmcv import dump, track_parallel_progress
 from mmcv.utils import print_log
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
-
-# Prediction = namedtuple('prediction', ('progression', 'cls_score'))
-class Prediction():
-    def __init__(self, results):
-        cls_score, progression = map(np.array, zip(*results))
-        self.cls_score = cls_score
-        self.progression = progression
-
-    def __len__(self):
-        return len(self.progression)
-    def __getitem__(self):
-        return self.t
+from custom_modules.mmdet_utils import bbox2result
+from custom_modules.mmdet_utils import eval_map
 
 
 @DATASETS.register_module()
@@ -126,9 +115,9 @@ class APNDataset(Dataset):
                     gt_infos.setdefault(class_label, {}).setdefault(video_name, []).append([start_frame, end_frame])
 
                     video_infos.setdefault(video_name, {}).setdefault('total_frames', total_frames)
-                    video_infos.setdefault(video_name, {}).setdefault('gt_bboxes', []).append(
-                        [start_frame, end_frame, class_label])
-                    video_infos.setdefault(video_name, {}).setdefault('rescale_rate', total_frames / self.test_sampling)
+                    video_infos.setdefault(video_name, {}).setdefault('gt_bboxes', []).append([start_frame, end_frame])
+                    video_infos.setdefault(video_name, {}).setdefault('gt_labels', []).append(class_label)
+                    video_infos.setdefault(video_name, {}).setdefault('rescale', total_frames / self.test_sampling)
 
         return gt_infos, video_infos
 
@@ -189,12 +178,16 @@ class APNDataset(Dataset):
                  metrics='MAE',
                  metric_options=dict(
                      mAP=dict(
+                         iou_thr=0.5,
                          search=dict(
                              min_e=60,
                              max_s=40,
                              min_L=60,
                              method='mse'),
-                         nms=dict(iou_thr=0.4))),
+                         nms=dict(
+                             score_thr=0.05,
+                             max_per_video=100,
+                             nms=dict(iou_thr=0.4)))),
                  logger=None):
         if not isinstance(results, list):
             raise TypeError(f'results must be a list, but got {type(results)}')
@@ -208,10 +201,7 @@ class APNDataset(Dataset):
             if metric not in allowed_metrics:
                 raise KeyError(f'metric {metric} is not supported')
 
-        cls_score, progression = map(np.array, zip(*results))
-        cls_ind = cls_score.argmax(axis=-1)
-        confidence = cls_score.max(axis=-1)
-        eval_results = {}
+        eval_results = OrderedDict()
         for metric in metrics:
             msg = f'Evaluating {metric}...'
             if logger is None:
@@ -227,6 +217,7 @@ class APNDataset(Dataset):
                 if isinstance(topk, int):
                     topk = (topk,)
 
+                cls_score, _ = map(np.array, zip(*results))
                 cls_label = self.get_class_labels()
                 top_k_acc = top_k_accuracy(cls_score, cls_label, topk)
                 log_msg = []
@@ -235,58 +226,52 @@ class APNDataset(Dataset):
                     log_msg.append(f'\ntop{k}_acc\t{acc:.4f}')
                 log_msg = ''.join(log_msg)
                 print_log(log_msg, logger=logger)
+                del cls_score, _, cls_label
                 continue
 
             if metric == 'MAE':
+                _, progression = map(np.array, zip(*results))
                 if self.untrimmed:
                     MAE = self.get_MAE_on_untrimmed(progression)
                 else:
                     MAE = self.get_MAE_on_trimmed(progression)
-                eval_results = self.update_and_print_eval(eval_results, MAE, 'MAE', logger)
+                eval_results['MAE'] = MAE
+                log_msg = f'MAE\t{MAE:.2f}'
+                print_log(log_msg, logger=logger)
+                del _, progression
+                continue
 
             if metric == 'mAP':
+                # Derive bboxes and scores
                 assert self.untrimmed is True, "To compute mAP, the dataset must be untrimmed"
                 results_vs_video = self.split_results_by_video(results)
-                detections = self.apn_action_detection(results_vs_video, det_kwargs=metric_options.get('mAP', {}))
-                detections = self.format_detections(detections)
+                det_results = self.apn_action_detection(results_vs_video, **metric_options.get('mAP', {}))
 
-                iou_range = np.arange(0.1, 1.0, .1)
-                ap_values = eval_ap(detections, self.gt_infos, iou_range)
-                mAP = ap_values.mean(axis=0)
-                for iou, mAP_iou in zip(iou_range, mAP):
-                    eval_results = self.update_and_print_eval(eval_results, mAP_iou, f'mAP@{iou:.01f}', logger)
+                # Computer mAP
+                iou_thr = metric_options.get('mAP', {}).get('iou_thr', 0.5)
+                iou_thrs = [iou_thr] if isinstance(iou_thr, float) else iou_thr
+                mean_aps = []
+                annotations = self.get_ann_info()
+                for iou_thr in iou_thrs:
+                    print_log(f'\n{"-" * 15}iou_thr: {iou_thr}{"-" * 15}')
+                    mean_ap, _ = eval_map(det_results,
+                                          annotations,
+                                          iou_thr=iou_thr,
+                                          dataset=self.CLASSES,
+                                          logger=logger)
+                    mean_aps.append(mean_ap)
+                    eval_results[f'AP{int(iou_thr * 100):02d}'] = round(mean_ap, 3)
+                eval_results[f'mAP'] = sum(mean_aps) / len(mean_aps)
                 continue
 
         return eval_results
 
-    def split_results_by_video(self, prediction):
-        prediction_vs_video = {}
-        cum_frames = 0
-        for video_name, data in self.video_infos.items():
-            p_by_video = prediction[cum_frames: cum_frames + self.test_sampling]
-            prediction_vs_video[video_name] = p_by_video
-            cum_frames += self.test_sampling
-        assert cum_frames == len(prediction), "total frames from 'video_infos' and 'results' not equal."
-        return prediction_vs_video
-
-    def format_detections(self, detections):
-        """Format the detections to input to the predefined function 'eval_ap' in 'ssn_utils',"""
-        formatted_detections = {}
-        for class_ind in self.gt_infos.keys():
-            det_by_c = []
-            for video_name in self.video_infos.keys():
-                det_by_v_by_c = detections[video_name][class_ind]
-                if det_by_v_by_c.size == 0:
-                    continue
-                video_name = np.full((len(det_by_v_by_c), 1), video_name)
-                class_id = np.full((len(det_by_v_by_c), 1), class_ind)
-                det_by_v_by_c = np.hstack([video_name, class_id, det_by_v_by_c + self.start_index])
-                det_by_c.append(det_by_v_by_c)
-            if len(det_by_c) == 0:
-                formatted_detections[class_ind] = np.empty((1, 5))
-            else:
-                formatted_detections[class_ind] = np.vstack(det_by_c)
-        return dict(sorted(formatted_detections.items()))
+    def split_results_by_video(self, results):
+        results_vs_video = []
+        for i in range(0, len(self), self.test_sampling):
+            results_by_video = results[i: i + self.test_sampling]
+            results_vs_video.append(results_by_video)
+        return results_vs_video
 
     def __len__(self):
         """Get the size of the dataset."""
@@ -300,6 +285,14 @@ class APNDataset(Dataset):
         results['start_index'] = self.start_index
         return self.pipeline(results)
 
+    def get_ann_info(self):
+        ann_info = []
+        for video_info in self.video_infos.values():
+            ann = dict(bboxes=np.array(video_info['gt_bboxes']),
+                       labels=np.array(video_info['gt_labels']))
+            ann_info.append(ann)
+        return ann_info
+
     def get_class_labels(self):
         class_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
         return class_label
@@ -311,19 +304,16 @@ class APNDataset(Dataset):
         print_log(log_msg, logger=logger)
         return eval_results
 
-    def apn_action_detection(self, results, det_kwargs, nproc=cpu_count()):
-        result_dict = {}
-        with Pool(nproc) as pool:
-            rescale_rate = [video_info['rescale_rate'] for video_info in self.video_infos.values()]
-            video_names, results = zip(*results.items())
-            all_dets = pool.starmap(
-                apn_detection_on_single_video,
-                zip(results, rescale_rate, repeat(det_kwargs)))
+    def apn_action_detection(self, results, nproc=cpu_count(), **kwargs):
+        rescale = [video_info['rescale'] for video_info in self.video_infos.values()]
+        det_results = track_parallel_progress(apn_detection_on_single_video,
+                                              list(zip(results, rescale, repeat(kwargs))),
+                                              nproc,
+                                              keep_order=True)
+        det_results = [bbox2result(det_bboxes, det_labels, len(self.gt_infos)) for det_bboxes, det_labels in
+                       det_results]
 
-        for video_name, dets_and_scores in zip(video_names, all_dets):
-            result_dict[video_name] = dets_and_scores
-
-        return result_dict
+        return det_results
 
     def get_MAE_on_trimmed(self, progression):
         progression_label = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
@@ -358,3 +348,13 @@ class APNDataset(Dataset):
         MAE = np.mean(np.abs(gt - pre))
         PV = pv.mean()
         return MAE if not return_pv else (MAE, PV)
+
+
+@DATASETS.register_module()
+class THUMOS14(APNDataset):
+    CLASSES = ('BaseballPitch', 'BasketballDunk', 'Billiards', 'CleanAndJerk',
+               'CliffDiving', 'CricketBowling', 'CricketShot', 'Diving',
+               'FrisbeeCatch', 'GolfSwing', 'HammerThrow', 'HighJump',
+               'JavelinThrow', 'LongJump', 'PoleVault', 'Shotput',
+               'SoccerPenalty', 'TennisSwing', 'ThrowDiscus',
+               'VolleyballSpiking')

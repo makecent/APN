@@ -75,6 +75,7 @@ class APN(BaseTAGClassifier):
     def forward_test(self, imgs):
         """Defines the computation performed at every call when evaluation and testing."""
         cls_score, reg_score = self._forward(imgs)
+        cls_score = cls_score.softmax(dim=-1)
         reg_score = reg_score.sigmoid()
         progression = decode_progression(reg_score)
         return list(zip(cls_score.cpu().numpy(), progression.cpu().numpy()))

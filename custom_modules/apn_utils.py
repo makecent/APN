@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
+from custom_modules.mmdet_utils import multiclass_nms
 
 
 def decode_progression(reg_score):
@@ -90,21 +91,29 @@ def score_progression_proposal(proposal, method='mse', backend='numpy'):
     return score
 
 
-def apn_detection_on_single_video(results, rescale_rate=1.0, det_kwargs={}):
-    search_kwargs = det_kwargs.get('search', {})
-    nms_kwargs = det_kwargs.get('nms', {})
+def apn_detection_on_single_video(results):
+    results, rescale_rate, kwargs = results
+    search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
-    dets_and_scores = []
     cls_score, progression = map(np.array, zip(*results))
-    dets, loc_confidence = apn_detection_on_vector(progression, **search_kwargs)
-    dets, loc_confidence = nms1d(dets, loc_confidence, **nms_kwargs)
-    dets = dets * rescale_rate
-    dets_and_scores.append(np.hstack([dets, loc_confidence[:, None]]))
-    # set 'min_L' back for the following detection because dictionary objects are mutable.
-    search_kwargs['min_L'] *= rescale_rate
+    cls_score = torch.from_numpy(cls_score).softmax(dim=-1).numpy()
+    det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
 
-    return dets_and_scores
+    cls_score = np.array([(cls_score[bbox[0]: bbox[1]+1]).mean(axis=0) for bbox in det_bbox])
+    det_bbox = det_bbox * rescale_rate
+
+    nms_kwargs = kwargs.get('nms', {})
+    det_bbox, cls_score, loc_score = map(torch.from_numpy, (det_bbox, cls_score, loc_score))
+    det_bbox, det_label = multiclass_nms(
+        det_bbox,
+        cls_score,
+        nms_kwargs.get('score_thr', 0.05),
+        nms_kwargs.get('nms', dict(iou_thr=0.4)),
+        nms_kwargs.get('max_per_video', 100),
+        score_factors=loc_score)
+
+    return det_bbox, det_label
 
 
 def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, score_threshold=0, method='mse',
