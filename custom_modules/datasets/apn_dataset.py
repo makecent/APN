@@ -338,8 +338,8 @@ class APNDataset(Dataset):
                     continue
                 pre_idx.extend(idx1 + cum_frames)
                 gt_idx.extend(idx2)
-                gt_progs.extend(progs_by_action * 100)
-                cls_labels.extend(cls_label_by_action)
+                gt_progs.extend(progs_by_action[idx2] * 100)
+                cls_labels.extend(cls_label_by_action[idx1])
             cum_frames += self.test_sampling
         result = [pre_idx, gt_idx]
         if return_cls_label:
