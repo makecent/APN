@@ -223,7 +223,7 @@ class APNDataset(Dataset):
                     cls_score = cls_score[sampled_idx_pre]
                 else:
                     cls_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
-                print(cls_score.shape, cls_label.shape)
+
                 top_k_acc = top_k_accuracy(cls_score, cls_label, topk)
                 log_msg = []
                 for k, acc in zip(topk, top_k_acc):
@@ -244,7 +244,7 @@ class APNDataset(Dataset):
                     gt_progression = np.array([frame_info['progression_label'] * 100 for frame_info in self.frame_infos])
                 MAE = np.abs(gt_progression - progression).mean()
                 eval_results['MAE'] = MAE
-                log_msg = f'MAE\t{MAE:.2f}'
+                log_msg = f'\nMAE\t{MAE:.2f}'
                 print_log(log_msg, logger=logger)
                 del progression
                 continue
@@ -331,12 +331,11 @@ class APNDataset(Dataset):
                 action_start, action_end = gt_bbox
                 action_frame = np.arange(action_start, action_end + 1)
                 progs_by_action = np.linspace(0, 1, len(action_frame))
-                cls_label_by_action = [class_label] * len(action_frame)
+                cls_label_by_action = np.full(len(action_frame), class_label)
                 idx1 = sampled_idx[np.where(np.in1d(sampled_frame, action_frame))[0]]
                 idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
                 if idx1.size == 0:
                     continue
-                print(idx1, idx2, idx1.dtype, idx2.dtype)
                 pre_idx.extend(idx1 + cum_frames)
                 gt_idx.extend(idx2)
                 gt_progs.extend(progs_by_action[idx2] * 100)
