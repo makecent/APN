@@ -335,8 +335,7 @@ class APNDataset(Dataset):
                 idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
                 if idx1.size == 0:
                     continue
-                print(idx1)
-                pre_idx.extend([idx1 + cum_frames])
+                pre_idx.extend(idx1 + cum_frames)
                 gt_idx.extend(idx2)
                 gt_progs.extend(progs_by_action * 100)
                 cls_labels.extend(cls_label_by_action)
