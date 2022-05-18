@@ -209,7 +209,6 @@ class APNDataset(Dataset):
             print_log(msg, logger=logger)
 
             if metric == 'top_k_accuracy':
-                assert self.untrimmed is False, "To compute accuracy, the dataset must be trimmed"
                 topk = metric_options.setdefault('top_k_accuracy', {}).setdefault('topk', (1, 5))
                 if not isinstance(topk, (int, tuple)):
                     raise TypeError('topk must be int or tuple of int, '
