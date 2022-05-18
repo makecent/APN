@@ -223,7 +223,7 @@ class APNDataset(Dataset):
                     cls_score = cls_score[sampled_idx_pre]
                 else:
                     cls_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
-                    print(cls_score.shape, cls_label.shape)
+                print(cls_score.shape, cls_label.shape)
                 top_k_acc = top_k_accuracy(cls_score, cls_label, topk)
                 log_msg = []
                 for k, acc in zip(topk, top_k_acc):
