@@ -102,7 +102,7 @@ def apn_detection_on_single_video(results):
     det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
 
     if len(det_bbox) == 0:
-        return np.empty([0, 3]), np.empty([0])
+        return torch.empty([0, 3]), torch.empty([0])
 
     cls_score = np.array([(cls_score[bbox[0]: bbox[1] + 1]).mean(axis=0) for bbox in det_bbox])
     det_bbox = det_bbox * rescale_rate

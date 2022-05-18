@@ -30,7 +30,7 @@ data_val = data_root + '/rawframes/test'
 
 ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
                   data_root + '/annotations/apn/apn_val.csv')
-ann_file_val = data_root + '/annotations/apn/apn_test_demo.csv'
+ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
