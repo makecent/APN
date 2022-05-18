@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
+
 from custom_modules.mmdet_utils import multiclass_nms
 
 
@@ -100,7 +101,10 @@ def apn_detection_on_single_video(results):
     cls_score = torch.from_numpy(cls_score).softmax(dim=-1).numpy()
     det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
 
-    cls_score = np.array([(cls_score[bbox[0]: bbox[1]+1]).mean(axis=0) for bbox in det_bbox])
+    if len(det_bbox) == 0:
+        return np.empty([0, 3]), np.empty([0])
+
+    cls_score = np.array([(cls_score[bbox[0]: bbox[1] + 1]).mean(axis=0) for bbox in det_bbox])
     det_bbox = det_bbox * rescale_rate
 
     nms_kwargs = kwargs.get('nms', {})
@@ -112,7 +116,7 @@ def apn_detection_on_single_video(results):
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
         nms_kwargs.get('max_per_video', -1),
         score_factors=loc_score)
-
+    print(det_bbox.shape, det_label.shape)
     return det_bbox, det_label
 
 
