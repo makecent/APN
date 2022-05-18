@@ -108,9 +108,9 @@ def apn_detection_on_single_video(results):
     det_bbox, det_label = multiclass_nms(
         det_bbox,
         cls_score,
-        nms_kwargs.get('score_thr', 0.05),
+        nms_kwargs.get('score_thr', 0.00),
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
-        nms_kwargs.get('max_per_video', 100),
+        nms_kwargs.get('max_per_video', -1),
         score_factors=loc_score)
 
     return det_bbox, det_label

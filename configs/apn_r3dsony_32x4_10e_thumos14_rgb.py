@@ -83,7 +83,8 @@ data = dict(
         pipeline=val_pipeline,
         data_prefixes=data_val,
         filename_tmpl='img_{:05}.jpg',
-        modality='RGB'
+        modality='RGB',
+        untrimmed=True
     ),
     test=dict(
         type=dataset_type,
@@ -96,7 +97,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
+evaluation = dict(metrics=['mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW', lr=1e-3, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
