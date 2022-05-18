@@ -340,6 +340,7 @@ class APNDataset(Dataset):
                 gt_progs.extend(progs_by_action * 100)
                 cls_labels.extend(cls_label_by_action)
             cum_frames += self.test_sampling
+        print(pre_idx, gt_idx, type(pre_idx[0]), type(gt_idx[0]))
         result = [pre_idx, gt_idx]
         if return_cls_label:
             result.append(cls_labels)
