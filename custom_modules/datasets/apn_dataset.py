@@ -342,10 +342,10 @@ class APNDataset(Dataset):
             cum_frames += self.test_sampling
         result = [pre_idx, gt_idx]
         if return_cls_label:
-            result.append(np.array(cls_labels))
+            result.append(cls_labels)
         if return_gt_progs:
-            result.append(np.array(gt_progs))
-        return result
+            result.append(gt_progs)
+        return list(map(np.array, result))
 
 
 @DATASETS.register_module()
