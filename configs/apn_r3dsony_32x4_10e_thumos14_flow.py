@@ -96,7 +96,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater', by_epoch=False)
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW', lr=1e-3, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
