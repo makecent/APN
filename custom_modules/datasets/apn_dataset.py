@@ -326,7 +326,8 @@ class APNDataset(Dataset):
         for video_name, video_info in self.video_infos.items():
             sampled_frame = np.linspace(0, video_info['total_frames'] - 1, self.test_sampling, dtype=int)
             sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
-            for action_start, action_end, class_label in video_info['gt_bboxes']:
+            for gt_bbox, class_label in zip(video_info['gt_bboxes'], video_info['gt_labels']):
+                action_start, action_end = gt_bbox
                 action_frame = np.arange(action_start, action_end + 1)
                 progs_by_action = np.linspace(0, 1, len(action_frame))
                 cls_label_by_action = [class_label] * len(action_frame)
