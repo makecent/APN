@@ -48,7 +48,6 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
