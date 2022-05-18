@@ -30,7 +30,7 @@ data_val = data_root + '/rawframes/test'
 
 ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
                   data_root + '/annotations/apn/apn_val.csv')
-ann_file_val = data_root + '/annotations/apn/apn_test.csv'
+ann_file_val = data_root + '/annotations/apn/apn_test_demo.csv'
 
 img_norm_cfg = dict(
     mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
@@ -96,7 +96,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['mAP'], save_best='mAP', rule='greater')
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW', lr=1e-3, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
