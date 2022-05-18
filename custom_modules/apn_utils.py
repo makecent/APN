@@ -116,7 +116,6 @@ def apn_detection_on_single_video(results):
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
         nms_kwargs.get('max_per_video', -1),
         score_factors=loc_score)
-    print(det_bbox.shape, det_label.shape)
     return det_bbox, det_label
 
 
