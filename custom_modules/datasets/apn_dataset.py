@@ -322,7 +322,7 @@ class APNDataset(Dataset):
         """ Only action frames have progressions labels."""
         assert self.untrimmed
         cum_frames = 0
-        pre_idx, gt_idx, gt_progs, cls_labels = [], [], []
+        pre_idx, gt_idx, gt_progs, cls_labels = [], [], [], []
         for video_name, video_info in self.video_infos.items():
             sampled_frame = np.linspace(0, video_info['total_frames'] - 1, self.test_sampling, dtype=int)
             sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
