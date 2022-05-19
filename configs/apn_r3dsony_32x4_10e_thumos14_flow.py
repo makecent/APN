@@ -99,11 +99,15 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1e-3, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
+optimizer = dict(type='SGD',
+                 lr=1e-2,
+                 momentum=0.9,
+                 weight_decay=0.0001,
+                 paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
 optimizer_config = dict(grad_clip=dict(max_norm=20))
 # learning policy
-lr_config = dict(policy='CosineAnnealing',
-                 min_lr_ratio=0.1,
+lr_config = dict(policy='Step',
+                 step=[6, 9],
                  warmup='linear',
                  warmup_ratio=0.1,
                  warmup_iters=1,
@@ -112,7 +116,7 @@ lr_config = dict(policy='CosineAnnealing',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_SGD_r3dsony_32x4_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

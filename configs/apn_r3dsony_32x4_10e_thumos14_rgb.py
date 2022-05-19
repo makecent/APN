@@ -116,7 +116,7 @@ lr_config = dict(policy='CosineAnnealing',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_rgb/'
+work_dir = './work_dirs/apn_RCrop_r3dsony_32x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
