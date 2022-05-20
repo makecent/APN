@@ -41,6 +41,7 @@ train_pipeline = [
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
+    dict(type='pytorchvideo.RandAugment'),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
@@ -110,7 +111,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_Adam_r3dsony_32x4_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_RAug_r3dsony_32x4_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

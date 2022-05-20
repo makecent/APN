@@ -103,9 +103,14 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1e-4)
-optimizer_config = dict(grad_clip=None)
-lr_config = dict(policy='Fixed')
+optimizer = dict(type='Adam', lr=1e-4)
+optimizer_config = dict(grad_clip=dict(max_norm=20))
+# learning policy
+lr_config = dict(policy='Fixed',
+                 warmup='linear',
+                 warmup_ratio=0.01,
+                 warmup_iters=1,
+                 warmup_by_epoch=True)
 total_epochs = 10
 
 # output settings
