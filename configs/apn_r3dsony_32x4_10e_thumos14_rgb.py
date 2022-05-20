@@ -105,6 +105,7 @@ evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rul
 # optimizer
 optimizer = dict(type='AdamW', lr=1e-4)
 optimizer_config = dict(grad_clip=None)
+lr_config = dict(policy='Fixed')
 total_epochs = 10
 
 # output settings
