@@ -297,13 +297,6 @@ class APNDataset(Dataset):
         class_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
         return class_label
 
-    @staticmethod
-    def update_and_print_eval(eval_results, result, name, logger=None, decimals=4):
-        eval_results[name] = result
-        log_msg = f'{name}: \t{result:.{decimals}f}'
-        print_log(log_msg, logger=logger)
-        return eval_results
-
     def apn_action_detection(self, results, nproc=cpu_count(), **kwargs):
         rescale = [video_info['rescale'] for video_info in self.video_infos.values()]
         det_results = track_parallel_progress(apn_detection_on_single_video,
