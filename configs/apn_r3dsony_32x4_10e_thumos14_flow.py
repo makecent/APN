@@ -48,7 +48,6 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
@@ -84,6 +83,7 @@ data = dict(
         data_prefixes=data_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
+        untrimmed=True
     ),
     test=dict(
         type=dataset_type,
@@ -96,18 +96,21 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='Adam', lr=1e-04)  # this lr is used for 2 gpus
-optimizer_config = dict(grad_clip=None)
-
+optimizer = dict(type='Adam', lr=1e-4)
+optimizer_config = dict(grad_clip=dict(max_norm=20))
 # learning policy
-lr_config = dict(policy='fixed')
+lr_config = dict(policy='Fixed',
+                 warmup='linear',
+                 warmup_ratio=0.01,
+                 warmup_iters=1,
+                 warmup_by_epoch=True)
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_Adam_r3dsony_32x4_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

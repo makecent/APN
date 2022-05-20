@@ -37,8 +37,10 @@ img_norm_cfg = dict(
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
+    dict(type='LabelToOrdinal'),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
@@ -48,9 +50,9 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -59,7 +61,8 @@ val_pipeline = [
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(-1, 256)),
+    dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -83,7 +86,8 @@ data = dict(
         pipeline=val_pipeline,
         data_prefixes=data_val,
         filename_tmpl='img_{:05}.jpg',
-        modality='RGB'
+        modality='RGB',
+        untrimmed=True
     ),
     test=dict(
         type=dataset_type,
@@ -96,23 +100,15 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW', lr=3e-4, paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
-optimizer_config = dict(grad_clip=dict(max_norm=20))
-# learning policy
-lr_config = dict(policy='CosineAnnealing',
-                 min_lr=0,
-                 warmup='linear',
-                 warmup_ratio=0.1,
-                 warmup_iters=1,
-                 warmup_by_epoch=True,
-                 by_epoch=False)
+optimizer = dict(type='AdamW', lr=1e-4)
+optimizer_config = dict(grad_clip=None)
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_rgb/'
+work_dir = './work_dirs/apn_RCrop_r3dsony_32x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

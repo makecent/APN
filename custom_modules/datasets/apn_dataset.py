@@ -185,8 +185,8 @@ class APNDataset(Dataset):
                              min_L=60,
                              method='mse'),
                          nms=dict(
-                             score_thr=0.05,
-                             max_per_video=100,
+                             score_thr=0,
+                             max_per_video=-1,
                              nms=dict(iou_thr=0.4)))),
                  logger=None):
         if not isinstance(results, list):
@@ -209,7 +209,6 @@ class APNDataset(Dataset):
             print_log(msg, logger=logger)
 
             if metric == 'top_k_accuracy':
-                assert self.untrimmed is False, "To compute accuracy, the dataset must be trimmed"
                 topk = metric_options.setdefault('top_k_accuracy', {}).setdefault('topk', (1, 5))
                 if not isinstance(topk, (int, tuple)):
                     raise TypeError('topk must be int or tuple of int, '
@@ -218,7 +217,13 @@ class APNDataset(Dataset):
                     topk = (topk,)
 
                 cls_score, _ = map(np.array, zip(*results))
-                cls_label = self.get_class_labels()
+                del _
+                if self.untrimmed:
+                    sampled_idx_pre, _, cls_label = self.get_sample_points_on_untrimmed(return_cls_label=True)
+                    cls_score = cls_score[sampled_idx_pre]
+                else:
+                    cls_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
+
                 top_k_acc = top_k_accuracy(cls_score, cls_label, topk)
                 log_msg = []
                 for k, acc in zip(topk, top_k_acc):
@@ -226,19 +231,22 @@ class APNDataset(Dataset):
                     log_msg.append(f'\ntop{k}_acc\t{acc:.4f}')
                 log_msg = ''.join(log_msg)
                 print_log(log_msg, logger=logger)
-                del cls_score, _, cls_label
+                del cls_score, cls_label
                 continue
 
             if metric == 'MAE':
                 _, progression = map(np.array, zip(*results))
+                del _
                 if self.untrimmed:
-                    MAE = self.get_MAE_on_untrimmed(progression)
+                    sampled_idx_pre, _, gt_progression = self.get_sample_points_on_untrimmed(return_gt_progs=True)
+                    progression = progression[sampled_idx_pre]
                 else:
-                    MAE = self.get_MAE_on_trimmed(progression)
+                    gt_progression = np.array([frame_info['progression_label'] * 100 for frame_info in self.frame_infos])
+                MAE = np.abs(gt_progression - progression).mean()
                 eval_results['MAE'] = MAE
-                log_msg = f'MAE\t{MAE:.2f}'
+                log_msg = f'\nMAE\t{MAE:.2f}'
                 print_log(log_msg, logger=logger)
-                del _, progression
+                del progression
                 continue
 
             if metric == 'mAP':
@@ -293,10 +301,6 @@ class APNDataset(Dataset):
             ann_info.append(ann)
         return ann_info
 
-    def get_class_labels(self):
-        class_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
-        return class_label
-
     def apn_action_detection(self, results, nproc=cpu_count(), **kwargs):
         rescale = [video_info['rescale'] for video_info in self.video_infos.values()]
         det_results = track_parallel_progress(apn_detection_on_single_video,
@@ -308,39 +312,34 @@ class APNDataset(Dataset):
 
         return det_results
 
-    def get_MAE_on_trimmed(self, progression):
-        progression_label = np.array([frame_info['progression_label'] for frame_info in self.frame_infos])
-        progression_label *= 100
-        MAE = (np.abs(progression_label - progression)).mean()
-        return MAE
-
-    def get_MAE_on_untrimmed(self, progression, return_pv=False):
+    def get_sample_points_on_untrimmed(self, return_cls_label=False, return_gt_progs=False):
         """ Only action frames have progressions labels."""
         assert self.untrimmed
-        progression = np.array(progression)
         cum_frames = 0
-        pre, gt, pv = [], [], []
+        pre_idx, gt_idx, gt_progs, cls_labels = [], [], [], []
         for video_name, video_info in self.video_infos.items():
-            num_sampling = video_info['total_frames'] if self.test_sampling == 'full' else self.test_sampling
-            sampled_frame = np.linspace(0, video_info['total_frames'] - 1, num_sampling, dtype=int)
+            sampled_frame = np.linspace(0, video_info['total_frames'] - 1, self.test_sampling, dtype=int)
             sampled_frame, sampled_idx = np.unique(sampled_frame, return_index=True)
-            for action_start, action_end, class_label in video_info['gt_bboxes']:
+            for gt_bbox, class_label in zip(video_info['gt_bboxes'], video_info['gt_labels']):
+                action_start, action_end = gt_bbox
                 action_frame = np.arange(action_start, action_end + 1)
-                progs = np.linspace(0, 1, len(action_frame))
+                progs_by_action = np.linspace(0, 1, len(action_frame))
+                cls_label_by_action = np.full(len(action_frame), class_label)
                 idx1 = sampled_idx[np.where(np.in1d(sampled_frame, action_frame))[0]]
                 idx2 = np.where(np.in1d(action_frame, sampled_frame))[0]
                 if idx1.size == 0:
                     continue
-                pre_all_class = progression[idx1 + cum_frames]
-                pv.append(np.var(pre_all_class, axis=-1))
-                pre.append(pre_all_class[:, class_label])
-                gt.append(progs[idx2] * self.num_stages)
-            cum_frames += self.test_sampling if self.test_sampling != 'full' else video_info['total_frames']
-        assert cum_frames == len(progression)
-        pre, gt, pv = np.hstack(pre), np.hstack(gt), np.hstack(pv)
-        MAE = np.mean(np.abs(gt - pre))
-        PV = pv.mean()
-        return MAE if not return_pv else (MAE, PV)
+                pre_idx.extend(idx1 + cum_frames)
+                gt_idx.extend(idx2)
+                gt_progs.extend(progs_by_action[idx2] * 100)
+                cls_labels.extend(cls_label_by_action[idx2])
+            cum_frames += self.test_sampling
+        result = [pre_idx, gt_idx]
+        if return_cls_label:
+            result.append(cls_labels)
+        if return_gt_progs:
+            result.append(gt_progs)
+        return list(map(np.array, result))
 
 
 @DATASETS.register_module()
