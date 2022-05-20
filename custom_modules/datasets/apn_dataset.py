@@ -186,7 +186,7 @@ class APNDataset(Dataset):
                              method='mse'),
                          nms=dict(
                              score_thr=0,
-                             max_per_video=-1,
+                             max_per_video=0,
                              nms=dict(iou_thr=0.4)))),
                  logger=None):
         if not isinstance(results, list):
