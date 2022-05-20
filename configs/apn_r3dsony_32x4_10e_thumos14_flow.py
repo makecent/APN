@@ -104,7 +104,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=20))
 # learning policy
 lr_config = dict(policy='Fixed',
                  warmup='linear',
-                 warmup_ratio=0.1,
+                 warmup_ratio=0.01,
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
