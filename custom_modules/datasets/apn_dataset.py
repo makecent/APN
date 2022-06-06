@@ -77,10 +77,11 @@ class APNDataset(Dataset):
         self.pipeline = Compose(pipeline)
 
         self.gt_infos, self.video_infos = self.load_gt_infos()
-        self.frame_infos = []
-        for ann_file, data_prefix in zip(self.ann_files, self.data_prefixes):
-            self.frame_infos.extend(
-                self.load_annotations(ann_file, data_prefix))
+        # self.frame_infos = []
+        # for ann_file, data_prefix in zip(self.ann_files, self.data_prefixes):
+        #     self.frame_infos.extend(
+        #         self.load_annotations(ann_file, data_prefix))
+        self.frame_infos = self.load_annotations(ann_files, data_prefixes)
 
     def load_gt_infos(self):
         """Generate ground truth from the ann_file, class-level and video-level for different purposes.
@@ -128,7 +129,7 @@ class APNDataset(Dataset):
     def load_annotations(self, ann_file, data_prefix):
         # Training and Validation dataset (trimmed)
         if not self.untrimmed:
-            # Adding action frames into the pool
+            # frame_infos = []
             # with open(ann_file, 'r') as fin:
             #     for line in fin.readlines():
             #         line_split = line.strip().split(',')
