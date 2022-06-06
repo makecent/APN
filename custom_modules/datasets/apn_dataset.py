@@ -11,6 +11,7 @@ from mmcv import dump, track_parallel_progress
 from mmcv.utils import print_log
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from random import shuffle, sample
 
 from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
 from custom_modules.mmdet_utils import bbox2result
@@ -58,6 +59,7 @@ class APNDataset(Dataset):
                  filename_tmpl='img_{:05}.jpg',
                  start_index=0,
                  modality='RGB',
+                 background_ratio=0,
                  test_mode=False):
         super().__init__()
         self.ann_files = ann_files if isinstance(ann_files, (list, tuple)) else [ann_files]
@@ -71,6 +73,7 @@ class APNDataset(Dataset):
         self.start_index = start_index
         assert modality in ['RGB', 'Flow', 'Video']
         self.modality = modality
+        self.background_ratio = background_ratio
         self.pipeline = Compose(pipeline)
 
         self.gt_infos, self.video_infos = self.load_gt_infos()
@@ -122,33 +125,60 @@ class APNDataset(Dataset):
         return gt_infos, video_infos
 
     def load_annotations(self, ann_file, data_prefix):
-        # Validation dataset (trimmed)
+        # Training and Validation dataset (trimmed)
         if not self.untrimmed:
-            frame_infos = []
-            with open(ann_file, 'r') as fin:
-                for line in fin.readlines():
-                    line_split = line.strip().split(',')
-                    video_name = str(line_split[0])
-                    total_frames = int(line_split[1])
-                    start_frame = int(line_split[2])
-                    end_frame = int(line_split[3])
-                    class_label = int(line_split[4])
+            # Adding action frames into the pool
+            # with open(ann_file, 'r') as fin:
+            #     for line in fin.readlines():
+            #         line_split = line.strip().split(',')
+            #         video_name = str(line_split[0])
+            #         total_frames = int(line_split[1])
+            #         start_frame = int(line_split[2])
+            #         end_frame = int(line_split[3])
+            #         class_label = int(line_split[4])
+            #
+            #         if self.modality != 'Video':
+            #             video_name = video_name.rsplit('.', 1)[0]
+            #         video_name = osp.join(data_prefix, video_name)
+            #         for frm_idx in range(start_frame, end_frame + 1):
+            #             frame_info = {'class_label': class_label,
+            #                           'frame_index': frm_idx}
+            #             if self.modality == 'Video':
+            #                 frame_info['filename'] = video_name
+            #             else:
+            #                 frame_info['frame_dir'] = video_name
+            #                 frame_info['total_frames'] = total_frames
+            #             progression_label = (frm_idx - start_frame) / (end_frame - start_frame)
+            #             frame_info['progression_label'] = progression_label
+            #             frame_infos.append(frame_info)
+            action_frames = []
+            background_frames = []
+            for video_name, video_info in self.video_infos.items():
+                video_name = osp.join(data_prefix, video_name)
+                total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
+                    'gt_labels']
+                for frm_idx in range(self.start_index, self.start_index + total_frames):
+                    frame_info = dict(frame_index=frm_idx, class_label=-1, progression_label=-1)
+                    if self.modality == 'Video':
+                        frame_info.update(dict(filename=video_name))
+                    else:
+                        frame_info.update(dict(frame_dir=video_name, total_frames=total_frames))
 
-                    if self.modality != 'Video':
-                        video_name = video_name.rsplit('.', 1)[0]
-                    video_name = osp.join(data_prefix, video_name)
-
-                    for frm_idx in range(start_frame, end_frame + 1):
-                        frame_info = {'class_label': class_label,
-                                      'frame_index': frm_idx}
-                        if self.modality == 'Video':
-                            frame_info['filename'] = video_name
-                        else:
-                            frame_info['frame_dir'] = video_name
-                            frame_info['total_frames'] = total_frames
-                        progression_label = (frm_idx - start_frame) / (end_frame - start_frame)
-                        frame_info['progression_label'] = progression_label
-                        frame_infos.append(frame_info)
+                    for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
+                        if frm_idx in range(start_f, end_f + 1):
+                            frame_info.update(dict(class_label=label,
+                                                   progression_label=(frm_idx - start_f) / (end_f - start_f)))
+                            action_frames.append(frame_info)
+                            break
+                    else:
+                        background_frames.append(frame_info)
+            if self.background_ratio == 'full':
+                frame_infos = action_frames + background_frames
+            elif self.background_ratio <= 0:
+                frame_infos = action_frames
+            else:
+                num_background = int(len(action_frames) * self.background_ratio / (1 - self.background_ratio))
+                frame_infos = action_frames + sample(background_frames, num_background)
         # Testing dataset (untrimmed)
         else:
             frame_infos = []
@@ -356,37 +386,44 @@ class THUMOS14(APNDataset):
 @DATASETS.register_module()
 class ActivityNet(APNDataset):
     CLASSES = (
-    'Applying sunscreen', 'Archery', 'Arm wrestling', 'Assembling bicycle', 'BMX', 'Baking cookies', 'Ballet',
-    'Bathing dog', 'Baton twirling', 'Beach soccer', 'Beer pong', 'Belly dance', 'Blow-drying hair', 'Blowing leaves',
-    'Braiding hair', 'Breakdancing', 'Brushing hair', 'Brushing teeth', 'Building sandcastles', 'Bullfighting',
-    'Bungee jumping', 'Calf roping', 'Camel ride', 'Canoeing', 'Capoeira', 'Carving jack-o-lanterns',
-    'Changing car wheel', 'Cheerleading', 'Chopping wood', 'Clean and jerk', 'Cleaning shoes', 'Cleaning sink',
-    'Cleaning windows', 'Clipping cat claws', 'Cricket', 'Croquet', 'Cumbia', 'Curling', 'Cutting the grass',
-    'Decorating the Christmas tree', 'Disc dog', 'Discus throw', 'Dodgeball', 'Doing a powerbomb', 'Doing crunches',
-    'Doing fencing', 'Doing karate', 'Doing kickboxing', 'Doing motocross', 'Doing nails', 'Doing step aerobics',
-    'Drinking beer', 'Drinking coffee', 'Drum corps', 'Elliptical trainer', 'Fixing bicycle', 'Fixing the roof',
-    'Fun sliding down', 'Futsal', 'Gargling mouthwash', 'Getting a haircut', 'Getting a piercing', 'Getting a tattoo',
-    'Grooming dog', 'Grooming horse', 'Hammer throw', 'Hand car wash', 'Hand washing clothes', 'Hanging wallpaper',
-    'Having an ice cream', 'High jump', 'Hitting a pinata', 'Hopscotch', 'Horseback riding', 'Hula hoop', 'Hurling',
-    'Ice fishing', 'Installing carpet', 'Ironing clothes', 'Javelin throw', 'Kayaking', 'Kite flying', 'Kneeling',
-    'Knitting', 'Laying tile', 'Layup drill in basketball', 'Long jump', 'Longboarding', 'Making a cake',
-    'Making a lemonade', 'Making a sandwich', 'Making an omelette', 'Mixing drinks', 'Mooping floor', 'Mowing the lawn',
-    'Paintball', 'Painting', 'Painting fence', 'Painting furniture', 'Peeling potatoes', 'Ping-pong', 'Plastering',
-    'Plataform diving', 'Playing accordion', 'Playing badminton', 'Playing bagpipes', 'Playing beach volleyball',
-    'Playing blackjack', 'Playing congas', 'Playing drums', 'Playing field hockey', 'Playing flauta',
-    'Playing guitarra', 'Playing harmonica', 'Playing ice hockey', 'Playing kickball', 'Playing lacrosse',
-    'Playing piano', 'Playing polo', 'Playing pool', 'Playing racquetball', 'Playing rubik cube', 'Playing saxophone',
-    'Playing squash', 'Playing ten pins', 'Playing violin', 'Playing water polo', 'Pole vault', 'Polishing forniture',
-    'Polishing shoes', 'Powerbocking', 'Preparing pasta', 'Preparing salad', 'Putting in contact lenses',
-    'Putting on makeup', 'Putting on shoes', 'Rafting', 'Raking leaves', 'Removing curlers', 'Removing ice from car',
-    'Riding bumper cars', 'River tubing', 'Rock climbing', 'Rock-paper-scissors', 'Rollerblading',
-    'Roof shingle removal', 'Rope skipping', 'Running a marathon', 'Sailing', 'Scuba diving', 'Sharpening knives',
-    'Shaving', 'Shaving legs', 'Shot put', 'Shoveling snow', 'Shuffleboard', 'Skateboarding', 'Skiing', 'Slacklining',
-    'Smoking a cigarette', 'Smoking hookah', 'Snatch', 'Snow tubing', 'Snowboarding', 'Spinning', 'Spread mulch',
-    'Springboard diving', 'Starting a campfire', 'Sumo', 'Surfing', 'Swimming', 'Swinging at the playground',
-    'Table soccer', 'Tai chi', 'Tango', 'Tennis serve with ball bouncing', 'Throwing darts',
-    'Trimming branches or hedges', 'Triple jump', 'Tug of war', 'Tumbling', 'Using parallel bars',
-    'Using the balance beam', 'Using the monkey bar', 'Using the pommel horse', 'Using the rowing machine',
-    'Using uneven bars', 'Vacuuming floor', 'Volleyball', 'Wakeboarding', 'Walking the dog', 'Washing dishes',
-    'Washing face', 'Washing hands', 'Waterskiing', 'Waxing skis', 'Welding', 'Windsurfing', 'Wrapping presents',
-    'Zumba')
+        'Applying sunscreen', 'Archery', 'Arm wrestling', 'Assembling bicycle', 'BMX', 'Baking cookies', 'Ballet',
+        'Bathing dog', 'Baton twirling', 'Beach soccer', 'Beer pong', 'Belly dance', 'Blow-drying hair',
+        'Blowing leaves',
+        'Braiding hair', 'Breakdancing', 'Brushing hair', 'Brushing teeth', 'Building sandcastles', 'Bullfighting',
+        'Bungee jumping', 'Calf roping', 'Camel ride', 'Canoeing', 'Capoeira', 'Carving jack-o-lanterns',
+        'Changing car wheel', 'Cheerleading', 'Chopping wood', 'Clean and jerk', 'Cleaning shoes', 'Cleaning sink',
+        'Cleaning windows', 'Clipping cat claws', 'Cricket', 'Croquet', 'Cumbia', 'Curling', 'Cutting the grass',
+        'Decorating the Christmas tree', 'Disc dog', 'Discus throw', 'Dodgeball', 'Doing a powerbomb', 'Doing crunches',
+        'Doing fencing', 'Doing karate', 'Doing kickboxing', 'Doing motocross', 'Doing nails', 'Doing step aerobics',
+        'Drinking beer', 'Drinking coffee', 'Drum corps', 'Elliptical trainer', 'Fixing bicycle', 'Fixing the roof',
+        'Fun sliding down', 'Futsal', 'Gargling mouthwash', 'Getting a haircut', 'Getting a piercing',
+        'Getting a tattoo',
+        'Grooming dog', 'Grooming horse', 'Hammer throw', 'Hand car wash', 'Hand washing clothes', 'Hanging wallpaper',
+        'Having an ice cream', 'High jump', 'Hitting a pinata', 'Hopscotch', 'Horseback riding', 'Hula hoop', 'Hurling',
+        'Ice fishing', 'Installing carpet', 'Ironing clothes', 'Javelin throw', 'Kayaking', 'Kite flying', 'Kneeling',
+        'Knitting', 'Laying tile', 'Layup drill in basketball', 'Long jump', 'Longboarding', 'Making a cake',
+        'Making a lemonade', 'Making a sandwich', 'Making an omelette', 'Mixing drinks', 'Mooping floor',
+        'Mowing the lawn',
+        'Paintball', 'Painting', 'Painting fence', 'Painting furniture', 'Peeling potatoes', 'Ping-pong', 'Plastering',
+        'Plataform diving', 'Playing accordion', 'Playing badminton', 'Playing bagpipes', 'Playing beach volleyball',
+        'Playing blackjack', 'Playing congas', 'Playing drums', 'Playing field hockey', 'Playing flauta',
+        'Playing guitarra', 'Playing harmonica', 'Playing ice hockey', 'Playing kickball', 'Playing lacrosse',
+        'Playing piano', 'Playing polo', 'Playing pool', 'Playing racquetball', 'Playing rubik cube',
+        'Playing saxophone',
+        'Playing squash', 'Playing ten pins', 'Playing violin', 'Playing water polo', 'Pole vault',
+        'Polishing forniture',
+        'Polishing shoes', 'Powerbocking', 'Preparing pasta', 'Preparing salad', 'Putting in contact lenses',
+        'Putting on makeup', 'Putting on shoes', 'Rafting', 'Raking leaves', 'Removing curlers',
+        'Removing ice from car',
+        'Riding bumper cars', 'River tubing', 'Rock climbing', 'Rock-paper-scissors', 'Rollerblading',
+        'Roof shingle removal', 'Rope skipping', 'Running a marathon', 'Sailing', 'Scuba diving', 'Sharpening knives',
+        'Shaving', 'Shaving legs', 'Shot put', 'Shoveling snow', 'Shuffleboard', 'Skateboarding', 'Skiing',
+        'Slacklining',
+        'Smoking a cigarette', 'Smoking hookah', 'Snatch', 'Snow tubing', 'Snowboarding', 'Spinning', 'Spread mulch',
+        'Springboard diving', 'Starting a campfire', 'Sumo', 'Surfing', 'Swimming', 'Swinging at the playground',
+        'Table soccer', 'Tai chi', 'Tango', 'Tennis serve with ball bouncing', 'Throwing darts',
+        'Trimming branches or hedges', 'Triple jump', 'Tug of war', 'Tumbling', 'Using parallel bars',
+        'Using the balance beam', 'Using the monkey bar', 'Using the pommel horse', 'Using the rowing machine',
+        'Using uneven bars', 'Vacuuming floor', 'Volleyball', 'Wakeboarding', 'Walking the dog', 'Washing dishes',
+        'Washing face', 'Washing hands', 'Waterskiing', 'Waxing skis', 'Welding', 'Windsurfing', 'Wrapping presents',
+        'Zumba')
