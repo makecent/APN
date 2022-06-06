@@ -159,7 +159,7 @@ class APNDataset(Dataset):
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
                     'gt_labels']
                 for frm_idx in range(self.start_index, self.start_index + total_frames):
-                    frame_info = dict(frame_index=frm_idx, class_label=-1, progression_label=-1)
+                    frame_info = dict(frame_index=frm_idx, class_label=len(self.CLASSES), progression_label=-1)
                     if self.modality == 'Video':
                         frame_info.update(dict(filename=video_name))
                     else:

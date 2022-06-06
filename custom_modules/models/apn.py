@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
 from mmaction.models.localizers import BaseTAGClassifier
-from mmaction.core import top_k_accuracy
+from mmaction.core import top_k_accuracy, mean_class_accuracy
 from ..apn_utils import binary_accuracy, decode_progression, progression_mae
 
 
@@ -56,9 +56,13 @@ class APN(BaseTAGClassifier):
         return output
 
     def forward_train(self, imgs, progression_label=None, class_label=None):
+        class_label = class_label.squeeze(-1)
         cls_score, reg_score = self._forward(imgs)
-        losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label.squeeze(-1)),
-                  'loss_reg': self.cls_head.loss_reg(reg_score, progression_label)}
+        losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
+
+        foreground = ~(class_label == self.cls_head.num_classes - 1)
+        reg_score, progression_label = reg_score[foreground], progression_label[foreground]
+        losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
 
         cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
                                  class_label.detach().cpu().numpy(),

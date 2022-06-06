@@ -6,6 +6,7 @@ from mmaction.models.heads.base import AvgConsensus
 
 from mmcv.cnn import kaiming_init, normal_init, constant_init
 from mmaction.models.builder import HEADS, build_loss
+from mmdet.models.builder import build_loss as mmdet_build_loss
 
 
 # class BiasLayer(nn.Module, metaclass=ABCMeta):
@@ -40,18 +41,20 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  num_stages=100,
                  in_channels=2048,
                  hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLoss'),
+                 loss_cls=dict(type='FocalLoss'),
                  loss_reg=dict(type='BCELossWithLogits'),
-                 dropout_ratio=0.5):
+                 dropout_ratio=0.5,
+                 with_background=True):
         super().__init__()
 
-        self.num_classes = num_classes
+        self.num_classes = num_classes if not with_background else (num_classes + 1)
         self.in_channels = in_channels
         self.hid_channels = hid_channels
-        self.loss_cls = build_loss(loss_cls)
+        self.loss_cls = mmdet_build_loss(loss_cls)
         self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
+        self.with_background = with_background
 
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
         if self.dropout_ratio > 0:
