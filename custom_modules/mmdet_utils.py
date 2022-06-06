@@ -58,8 +58,8 @@ def multiclass_nms(multi_bboxes,
             (k), and (k). Dets are boxes with scores. Labels are 0-based.
     """
     # TODO: num_classes should minus 1 only if the BackGround is in the cls_score
-    # num_classes = multi_scores.size(1) - 1
-    num_classes = multi_scores.size(1)
+    num_classes = multi_scores.size(1) - 1
+    # num_classes = multi_scores.size(1)
     if multi_bboxes.shape[1] > 2:
         bboxes = multi_bboxes.view(multi_scores.size(0), -1, 2)
     else:
