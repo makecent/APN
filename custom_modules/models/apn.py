@@ -59,6 +59,8 @@ class APN(BaseTAGClassifier):
         class_label = class_label.squeeze(-1)
         cls_score, reg_score = self._forward(imgs)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
+        if class_label.max() > 20 or class_label.min() < 0:
+            print(f"\n\n\n\nSmoething worejwoerji {class_label}\n\n\n\n")
 
         foreground = ~(class_label == self.cls_head.num_classes - 1)
         reg_score, progression_label = reg_score[foreground], progression_label[foreground]
