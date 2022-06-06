@@ -114,9 +114,5 @@ lr_config = dict(policy='Fixed',
                  warmup_by_epoch=True)
 total_epochs = 10
 
-# output settings
-work_dir = './work_dirs/apn_RCrop_r3dsony_32x4_10e_thumos14_flow/'
-output_config = dict(out=f'{work_dir}/progressions.pkl')
-
 # testing config
 eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))
