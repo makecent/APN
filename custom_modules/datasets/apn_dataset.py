@@ -103,7 +103,7 @@ class APNDataset(Dataset):
         """
         gt_infos = {}
         video_infos = {}
-        for ann_file in self.ann_files:
+        for ann_file, data_prefix in zip(self.ann_files, self.data_prefixes):
             with open(ann_file, 'r') as fin:
                 for line in fin.readlines():
                     line_split = line.strip().split(',')
@@ -114,6 +114,7 @@ class APNDataset(Dataset):
                     class_label = int(line_split[4])
                     if self.modality != 'Video':
                         video_name = video_name.rsplit('.', 1)[0]
+                    video_name = osp.join(data_prefix, video_name)
 
                     gt_infos.setdefault(class_label, {}).setdefault(video_name, []).append([start_frame, end_frame])
 
@@ -154,7 +155,7 @@ class APNDataset(Dataset):
             action_frames = []
             background_frames = []
             for video_name, video_info in self.video_infos.items():
-                video_name = osp.join(data_prefix, video_name)
+                # video_name = osp.join(data_prefix, video_name)
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
                     'gt_labels']
                 for frm_idx in range(self.start_index, self.start_index + total_frames):
@@ -183,7 +184,7 @@ class APNDataset(Dataset):
         else:
             frame_infos = []
             for video_name, video_info in self.video_infos.items():
-                video_name = osp.join(data_prefix, video_name)
+                # video_name = osp.join(data_prefix, video_name)
                 total_frames = video_info['total_frames']
                 frame_inds = list(range(self.start_index, self.start_index + total_frames))
                 frame_inds = uniform_sampling_1d(frame_inds, self.test_sampling)
