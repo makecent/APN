@@ -65,9 +65,9 @@ def multiclass_nms(multi_bboxes,
     else:
         bboxes = multi_bboxes[:, None].expand(multi_scores.size(0),
                                               num_classes, 2)
-
-    # scores = multi_scores[:, :-1]
-    scores = multi_scores
+    # TODO: scores equal multi_scores[:, :-1] only if the BackGround is in the scores
+    scores = multi_scores[:, :-1]
+    # scores = multi_scores
 
     labels = torch.arange(num_classes, dtype=torch.long)
     labels = labels.view(1, -1).expand_as(scores)
