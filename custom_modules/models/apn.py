@@ -60,19 +60,21 @@ class APN(BaseTAGClassifier):
         cls_score, reg_score = self._forward(imgs)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
 
-        foreground = ~(class_label == self.cls_head.num_classes - 1)
-        reg_score, progression_label = reg_score[foreground], progression_label[foreground]
-        losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
-
         cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
                                  class_label.detach().cpu().numpy(),
                                  topk=(1,))
-        reg_score = reg_score.sigmoid()
-        reg_acc = binary_accuracy(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
-        reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
         losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
-        losses[f'reg_acc'] = torch.tensor(reg_acc, device=reg_score.device)
-        losses[f'reg_mae'] = torch.tensor(reg_mae, device=reg_score.device)
+
+        foreground = ~(class_label == self.cls_head.num_classes - 1)
+        reg_score, progression_label = reg_score[foreground], progression_label[foreground]
+
+        if progression_label.numel() > 0:
+            losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
+            reg_score = reg_score.sigmoid()
+            reg_acc = binary_accuracy(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
+            reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
+            losses[f'reg_acc'] = torch.tensor(reg_acc, device=reg_score.device)
+            losses[f'reg_mae'] = torch.tensor(reg_mae, device=reg_score.device)
 
         return losses
 

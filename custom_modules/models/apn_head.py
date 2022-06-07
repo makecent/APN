@@ -41,7 +41,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  num_stages=100,
                  in_channels=2048,
                  hid_channels=256,
-                 loss_cls=dict(type='FocalLoss'),
+                 loss_cls=dict(type='FocalLoss', gamma=2.0, alpha=0.25),
                  loss_reg=dict(type='BCELossWithLogits'),
                  dropout_ratio=0.5,
                  with_background=True):
