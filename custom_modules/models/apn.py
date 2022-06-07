@@ -65,7 +65,7 @@ class APN(BaseTAGClassifier):
                                  topk=(1,))
         losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
 
-        foreground = ~(class_label == self.cls_head.num_classes - 1)
+        foreground = ~(class_label == self.cls_head.num_classes)
         reg_score, progression_label = reg_score[foreground], progression_label[foreground]
 
         if progression_label.numel() > 0:
