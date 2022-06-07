@@ -43,18 +43,16 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  hid_channels=256,
                  loss_cls=dict(type='FocalLoss', gamma=2.0, alpha=0.25),
                  loss_reg=dict(type='BCELossWithLogits'),
-                 dropout_ratio=0.5,
-                 with_background=True):
+                 dropout_ratio=0.5):
         super().__init__()
 
-        self.num_classes = num_classes if not with_background else (num_classes + 1)
+        self.num_classes = num_classes
         self.in_channels = in_channels
         self.hid_channels = hid_channels
         self.loss_cls = mmdet_build_loss(loss_cls)
         self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
-        self.with_background = with_background
 
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
         if self.dropout_ratio > 0:
