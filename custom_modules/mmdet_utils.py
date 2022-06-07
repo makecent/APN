@@ -57,17 +57,17 @@ def multiclass_nms(multi_bboxes,
         tuple: (dets, labels, indices (optional)), tensors of shape (k, 5),
             (k), and (k). Dets are boxes with scores. Labels are 0-based.
     """
-    # TODO: num_classes should minus 1 only if the BackGround is in the cls_score
-    num_classes = multi_scores.size(1) - 1
-    # num_classes = multi_scores.size(1)
+    # TODO: num_classes should minus 1 only if there is BackGround score in the cls_score (not applicable to APN)
+    # num_classes = multi_scores.size(1) - 1
+    num_classes = multi_scores.size(1)
     if multi_bboxes.shape[1] > 2:
         bboxes = multi_bboxes.view(multi_scores.size(0), -1, 2)
     else:
         bboxes = multi_bboxes[:, None].expand(multi_scores.size(0),
                                               num_classes, 2)
-    # TODO: scores equal multi_scores[:, :-1] only if the BackGround is in the scores
-    scores = multi_scores[:, :-1]
-    # scores = multi_scores
+    # TODO: scores equal multi_scores[:, :-1] only if there is BackGround score in the scores (not applicable to APN)
+    # scores = multi_scores[:, :-1]
+    scores = multi_scores
 
     labels = torch.arange(num_classes, dtype=torch.long)
     labels = labels.view(1, -1).expand_as(scores)
