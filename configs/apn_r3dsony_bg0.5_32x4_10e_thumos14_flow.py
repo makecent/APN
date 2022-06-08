@@ -116,3 +116,4 @@ total_epochs = 10
 
 # testing config
 eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))
+find_unused_parameters=True
