@@ -75,8 +75,8 @@ class APN(BaseTAGClassifier):
             reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
             losses[f'reg_acc'] = torch.tensor(reg_acc, device=reg_score.device)
             losses[f'reg_mae'] = torch.tensor(reg_mae, device=reg_score.device)
-        else:
-            losses['loss_reg'] = reg_score * 0
+        # else:
+        #     losses['loss_reg'] = reg_score * 0
 
         return losses
 
