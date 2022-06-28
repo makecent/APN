@@ -113,6 +113,3 @@ lr_config = dict(policy='Fixed',
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
-
-# testing config
-eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))

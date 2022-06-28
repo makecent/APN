@@ -135,7 +135,7 @@ def batched_nms(boxes, scores, idxs, nms_cfg, class_agnostic=False):
 
     split_thr = nms_cfg_.pop('split_thr', 10000)
     # Won't split to multiple nms nodes when exporting to onnx
-    if boxes_for_nms.shape[0] < split_thr or torch.onnx.is_in_onnx_export():
+    if boxes_for_nms.shape[0] < split_thr or torch.onnx.is_in_onnx_export() or class_agnostic:
         dets, keep = nms(boxes_for_nms,
                          scores,
                          nms_cfg_['iou_thr'],

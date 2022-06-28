@@ -42,7 +42,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  in_channels=2048,
                  hid_channels=256,
                  # loss_cls=dict(type='FocalLoss', gamma=2.0, alpha=0.25),
-                 loss_cls=dict(type='BCELossWithLogits'),
+                 # loss_cls=dict(type='BCELossWithLogits'),
+                 loss_cls=dict(type='CrossEntropyLoss'),
                  loss_reg=dict(type='BCELossWithLogits'),
                  dropout_ratio=0.5):
         super().__init__()
@@ -61,8 +62,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:
             self.dropout = nn.Identity()
-
-        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
+        # TODO: remove + 1
+        self.cls_fc = nn.Linear(self.in_channels, self.num_classes + 1)
 
         self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
         self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
