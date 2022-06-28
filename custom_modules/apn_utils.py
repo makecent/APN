@@ -108,13 +108,13 @@ def apn_detection_on_single_video(results):
 
     nms_kwargs = kwargs.get('nms', {})
     det_bbox, cls_score, loc_score = map(torch.from_numpy, (det_bbox, cls_score, loc_score))
+    score = cls_score * loc_score[:, None]
     det_bbox, det_label = multiclass_nms(
         det_bbox,
-        cls_score * loc_score[:, None],
-        nms_kwargs.get('score_thr', 0.00),
-        nms_kwargs.get('nms', dict(iou_thr=0.4)),
+        score,
+        nms_kwargs.get('score_thr', 0.),
+        nms_kwargs.get('nms', dict(iou_thr=0.4, class_agnostic=True)),
         nms_kwargs.get('max_per_video', -1))
-        # score_factors=loc_score)
     return det_bbox, det_label
 
 
