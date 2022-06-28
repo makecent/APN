@@ -2,9 +2,23 @@ from abc import ABCMeta
 
 import torch
 import torch.nn as nn
+from mmaction.models.heads.base import AvgConsensus
 
 from mmcv.cnn import kaiming_init, normal_init, constant_init
 from mmaction.models.builder import HEADS, build_loss
+from mmdet.models.builder import build_loss as mmdet_build_loss
+
+
+# class BiasLayer(nn.Module, metaclass=ABCMeta):
+#     def __init__(self, input_channel, num_bias):
+#         super(BiasLayer, self).__init__()
+#         self.input_channel = input_channel
+#         self.num_bias = num_bias
+#
+#         self.bias = nn.Parameter(torch.zeros(input_channel, num_bias).float(), requires_grad=True)
+#
+#     def forward(self, x):
+#         return x.unsqueeze(-1).repeat_interleave(self.num_bias, dim=-1) + self.bias
 
 
 @HEADS.register_module()
@@ -27,7 +41,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  num_stages=100,
                  in_channels=2048,
                  hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLoss'),
+                 # loss_cls=dict(type='FocalLoss', gamma=2.0, alpha=0.25),
+                 loss_cls=dict(type='BCELossWithLogits'),
                  loss_reg=dict(type='BCELossWithLogits'),
                  dropout_ratio=0.5):
         super().__init__()
@@ -35,6 +50,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_classes = num_classes
         self.in_channels = in_channels
         self.hid_channels = hid_channels
+        # self.loss_cls = mmdet_build_loss(loss_cls)
         self.loss_cls = build_loss(loss_cls)
         self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages

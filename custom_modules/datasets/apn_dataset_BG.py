@@ -77,6 +77,10 @@ class APNDataset(Dataset):
         self.pipeline = Compose(pipeline)
 
         self.gt_infos, self.video_infos = self.load_gt_infos()
+        # self.frame_infos = []
+        # for ann_file, data_prefix in zip(self.ann_files, self.data_prefixes):
+        #     self.frame_infos.extend(
+        #         self.load_annotations(ann_file, data_prefix))
         self.frame_infos = self.load_annotations(ann_files, data_prefixes)
 
     def load_gt_infos(self):
@@ -122,19 +126,61 @@ class APNDataset(Dataset):
 
         return gt_infos, video_infos
 
-    def load_annotations(self):
+    def load_annotations(self, ann_file, data_prefix):
         # Training and Validation dataset (trimmed)
         if not self.untrimmed:
-            frame_infos = []
+            # frame_infos = []
+            # with open(ann_file, 'r') as fin:
+            #     for line in fin.readlines():
+            #         line_split = line.strip().split(',')
+            #         video_name = str(line_split[0])
+            #         total_frames = int(line_split[1])
+            #         start_frame = int(line_split[2])
+            #         end_frame = int(line_split[3])
+            #         class_label = int(line_split[4])
+            #
+            #         if self.modality != 'Video':
+            #             video_name = video_name.rsplit('.', 1)[0]
+            #         video_name = osp.join(data_prefix, video_name)
+            #         for frm_idx in range(start_frame, end_frame + 1):
+            #             frame_info = {'class_label': class_label,
+            #                           'frame_index': frm_idx}
+            #             if self.modality == 'Video':
+            #                 frame_info['filename'] = video_name
+            #             else:
+            #                 frame_info['frame_dir'] = video_name
+            #                 frame_info['total_frames'] = total_frames
+            #             progression_label = (frm_idx - start_frame) / (end_frame - start_frame)
+            #             frame_info['progression_label'] = progression_label
+            #             frame_infos.append(frame_info)
+            action_frames = []
+            background_frames = []
             for video_name, video_info in self.video_infos.items():
-                total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info['gt_labels']
-                for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
-                    frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(frame_dir=video_name, total_frames=total_frames)
-                    for frm_idx in range(start_f, end_f + 1):
-                        frame_info.update(dict(frame_index=frm_idx,
-                                               class_label=label,
-                                               progression_label=(frm_idx - start_f) / (end_f - start_f)))
-                        frame_infos.append(frame_info)
+                # video_name = osp.join(data_prefix, video_name)
+                total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
+                    'gt_labels']
+                for frm_idx in range(self.start_index, self.start_index + total_frames):
+                    frame_info = dict(frame_index=frm_idx, class_label=len(self.CLASSES), progression_label=-1)
+                    if self.modality == 'Video':
+                        frame_info.update(dict(filename=video_name))
+                    else:
+                        frame_info.update(dict(frame_dir=video_name, total_frames=total_frames))
+
+                    for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
+                        if frm_idx in range(start_f, end_f + 1):
+                            frame_info.update(dict(class_label=label,
+                                                   progression_label=(frm_idx - start_f) / (end_f - start_f)))
+                            action_frames.append(frame_info)
+                            break
+                    else:
+                        background_frames.append(frame_info)
+            if self.background_ratio == 'full':
+                frame_infos = action_frames + background_frames
+            elif self.background_ratio <= 0:
+                frame_infos = action_frames
+            else:
+                num_background = int(len(action_frames) * self.background_ratio / (1 - self.background_ratio))
+                frame_infos = action_frames + sample(background_frames, num_background)
         # Testing dataset (untrimmed)
         else:
             frame_infos = []

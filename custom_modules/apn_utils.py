@@ -3,7 +3,7 @@ import torch
 from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
 
 from custom_modules.mmdet_utils import multiclass_nms
-
+from matplotlib import pyplot as plt
 
 def decode_progression(reg_score):
     num_stage = reg_score.shape[-1]
@@ -93,12 +93,11 @@ def score_progression_proposal(proposal, method='mse', backend='numpy'):
 
 
 def apn_detection_on_single_video(results):
-    results, rescale_rate, kwargs = results
+    video_name, results, rescale_rate, kwargs = results
     search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
     cls_score, progression = map(np.array, zip(*results))
-    cls_score = torch.from_numpy(cls_score).softmax(dim=-1).numpy()
     det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
 
     if len(det_bbox) == 0:
@@ -111,11 +110,11 @@ def apn_detection_on_single_video(results):
     det_bbox, cls_score, loc_score = map(torch.from_numpy, (det_bbox, cls_score, loc_score))
     det_bbox, det_label = multiclass_nms(
         det_bbox,
-        cls_score,
+        cls_score * loc_score[:, None],
         nms_kwargs.get('score_thr', 0.00),
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
-        nms_kwargs.get('max_per_video', -1),
-        score_factors=loc_score)
+        nms_kwargs.get('max_per_video', -1))
+        # score_factors=loc_score)
     return det_bbox, det_label
 
 
@@ -328,3 +327,27 @@ def average_precision_at_temporal_iou(ground_truth,
                                                   recall_cumsum[t_idx, :])
 
     return (ap, tp) if return_tp else ap
+
+
+def plot_gt(video_name, height):
+    from matplotlib import pyplot as plt
+    from itertools import repeat
+    import pandas as pd
+    import numpy as np
+    # plot_gt(video_name.rsplit('/', 1)[-1] + '.mp4', 2)
+    # plt.plot(cls_score.sum(-1))
+    # plt.title(video_name.rsplit('/', 1)[-1])
+    # plt.show()
+    # plot_gt(video_name.rsplit('/', 1)[-1] + '.mp4', 100)
+    # plt.title(video_name.rsplit('/', 1)[-1])
+    # plt.plot(progression)
+    # plt.show()
+    gts = pd.read_csv('/home/louis/PycharmProjects/APN/my_data/thumos14/annotations/apn/apn_test.csv', header=None)
+    this_gt = gts[gts[0] == video_name]
+    endpoints = this_gt.iloc[:, 2:4].values
+    video_length = this_gt[1].iloc[0]
+    normalized_endpoints = endpoints/video_length * 1000
+    normalized_endpoints = np.rint(normalized_endpoints).astype(int)
+    start = normalized_endpoints[:, 0]
+    end = normalized_endpoints[:, 1]
+    plt.bar(normalized_endpoints.mean(-1), height, width=end - start, align='center', alpha=0.5)

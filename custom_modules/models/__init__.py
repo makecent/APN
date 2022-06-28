@@ -4,5 +4,5 @@ from .apn_head import *
 # from .apn_loss import *
 
 __all__ = [
-    'apn', 'apn_head', 'apn_loss', 'backbones'
+    'apn', 'apn_head', 'backbones'
 ]
