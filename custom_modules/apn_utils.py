@@ -97,8 +97,8 @@ def apn_detection_on_single_video(results):
     search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
-    cls_score, progression = map(np.array, zip(*results))
-    det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
+    cls_score, progression, end_score = map(np.array, zip(*results))
+    det_bbox, loc_score = apn_detection_on_vector(progression, end_score, **search_kwargs)
 
     if len(det_bbox) == 0:
         return torch.empty([0, 3]), torch.empty([0])
@@ -118,7 +118,7 @@ def apn_detection_on_single_video(results):
     return det_bbox, det_label
 
 
-def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, score_threshold=0, method='mse',
+def apn_detection_on_vector(progression_vector, end_score, min_e=60, max_s=40, min_L=60, score_threshold=0, method='mse',
                             backbend='numpy'):
     """
     :param progression_vector:
@@ -131,10 +131,10 @@ def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, sc
     if pytorch:
         progression_vector = torch.from_numpy(progression_vector).cuda()
     progs = progression_vector.squeeze()
-    start_candidates = torch.where(progs < max_s)[0] if pytorch else np.where(progs < max_s)[0]
-    # start_candidates = cluster_and_flatten(start_candidates, 2)
-    end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs > min_e)[0]
-    # end_candidates = cluster_and_flatten(end_candidates, 2)
+    # start_candidates = torch.where(progs < max_s)[0] if pytorch else np.where(progs < max_s)[0]
+    # end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs > min_e)[0]
+    start_candidates = torch.where(torch.logical_or(progs < max_s, end_score[:, 0] > 0.5))[0] if pytorch else np.where(np.logical_or(progs < max_s, end_score[:, 0] > 0.5))[0]
+    end_candidates = torch.where(torch.logical_or(progs > min_e, end_score[:, -1] > 0.5))[0] if pytorch else np.where(np.logical_or(progs < min_e, end_score[:, -1] > 0.5))[0]
     dets = []
     scores = []
 

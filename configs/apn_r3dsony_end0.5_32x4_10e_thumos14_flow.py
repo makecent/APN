@@ -43,13 +43,13 @@ train_pipeline = [
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs', 'progression_label', 'class_label']),
+    dict(type='Collect', keys=['imgs', 'progression_label', 'class_label', 'end_label'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs', 'progression_label', 'class_label', 'end_label']),
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224)),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -58,7 +58,7 @@ val_pipeline = [
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224)),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -110,8 +110,5 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_RCrop_r3dsony_32x4_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_r3dsony_end0.5_32x4_10e_thumos14_flow/'
 output_config = dict(out=f'{work_dir}/results.pkl')
-
-# testing config
-eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))

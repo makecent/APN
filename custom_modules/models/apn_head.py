@@ -47,12 +47,14 @@ class APNHead(nn.Module, metaclass=ABCMeta):
             self.dropout = nn.Identity()
 
         self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
+        self.end_fc = nn.Linear(self.in_channels, 3)
 
         self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
         self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
 
     def init_weights(self):
         kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
+        kaiming_init(self.end_fc, a=0, nonlinearity='relu', distribution='uniform')
         kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
         constant_init(self.coral_bias, 0)
 
@@ -62,4 +64,5 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
         reg_score = self.coral_fc(x) + self.coral_bias
-        return cls_score, reg_score
+        end_score = self.end_fc(x)
+        return cls_score, reg_score, end_score

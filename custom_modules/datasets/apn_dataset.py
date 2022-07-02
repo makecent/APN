@@ -77,7 +77,7 @@ class APNDataset(Dataset):
         self.pipeline = Compose(pipeline)
 
         self.gt_infos, self.video_infos = self.load_gt_infos()
-        self.frame_infos = self.load_annotations(ann_files, data_prefixes)
+        self.frame_infos = self.load_annotations()
 
     def load_gt_infos(self):
         """Generate ground truth from the ann_file, class-level and video-level for different purposes.
@@ -127,13 +127,19 @@ class APNDataset(Dataset):
         if not self.untrimmed:
             frame_infos = []
             for video_name, video_info in self.video_infos.items():
-                total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info['gt_labels']
+                total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
+                    'gt_labels']
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
-                    frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(frame_dir=video_name, total_frames=total_frames)
                     for frm_idx in range(start_f, end_f + 1):
+                        frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(
+                            frame_dir=video_name,
+                            total_frames=total_frames)
+                        progression_label = (frm_idx - start_f) / (end_f - start_f)
+                        end_label = min(int(progression_label * 3), 2)
                         frame_info.update(dict(frame_index=frm_idx,
                                                class_label=label,
-                                               progression_label=(frm_idx - start_f) / (end_f - start_f)))
+                                               progression_label=progression_label,
+                                               end_label=end_label))
                         frame_infos.append(frame_info)
         # Testing dataset (untrimmed)
         else:
@@ -202,8 +208,8 @@ class APNDataset(Dataset):
                 if isinstance(topk, int):
                     topk = (topk,)
 
-                cls_score, _ = map(np.array, zip(*results))
-                del _
+                cls_score, _, _ = map(np.array, zip(*results))
+                del _,
                 if self.untrimmed:
                     sampled_idx_pre, _, cls_label = self.get_sample_points_on_untrimmed(return_cls_label=True)
                     cls_score = cls_score[sampled_idx_pre]
@@ -221,7 +227,7 @@ class APNDataset(Dataset):
                 continue
 
             if metric == 'MAE':
-                _, progression = map(np.array, zip(*results))
+                _, progression, _ = map(np.array, zip(*results))
                 del _
                 if self.untrimmed:
                     sampled_idx_pre, _, gt_progression = self.get_sample_points_on_untrimmed(return_gt_progs=True)
