@@ -1,5 +1,6 @@
 import numpy as np
 from mmaction.datasets.builder import PIPELINES
+from mmaction.datasets.pipelines import SampleFrames
 
 
 @PIPELINES.register_module()
@@ -42,6 +43,30 @@ class FetchStackedFrames(object):
         results['frame_interval'] = self.frame_interval
         return results
 
+
+@PIPELINES.register_module()
+class FetchGlobalFrames:
+    def __init__(self, sample_range=640, *args, **kwargs):
+        self.sample_range = sample_range
+        self.tsn_sampler = SampleFrames(*args, **kwargs)
+
+    def __call__(self, results):
+        """Perform the FetchFrames loading.
+
+        Args:
+            results (dict): The resulting dict to be modified and passed
+                to the next transform in pipeline.
+        """
+        start_index = results['start_index']
+        total_frames = results['total_frames']
+        frame_inds = self.tsn_sampler(dict(total_frames=self.sample_range, start_index=start_index))['frame_inds']
+        frame_inds += results['frame_index'] - self.sample_range//2
+        frame_inds = np.clip(frame_inds, start_index, start_index + total_frames - 1)
+
+        results['frame_inds'] = np.concatenate([results['frame_inds'], frame_inds])
+        results['clip_len'] = 1
+        results['num_clips'] = 1
+        return results
 
 @PIPELINES.register_module()
 class LabelToOrdinal(object):

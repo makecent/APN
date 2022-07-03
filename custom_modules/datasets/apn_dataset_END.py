@@ -135,9 +135,11 @@ class APNDataset(Dataset):
                             frame_dir=video_name,
                             total_frames=total_frames)
                         progression_label = (frm_idx - start_f) / (end_f - start_f)
+                        end_label = min(int(progression_label * 3), 2)
                         frame_info.update(dict(frame_index=frm_idx,
                                                class_label=label,
-                                               progression_label=progression_label))
+                                               progression_label=progression_label,
+                                               end_label=end_label))
                         frame_infos.append(frame_info)
         # Testing dataset (untrimmed)
         else:
@@ -206,7 +208,7 @@ class APNDataset(Dataset):
                 if isinstance(topk, int):
                     topk = (topk,)
 
-                cls_score, _, = map(np.array, zip(*results))
+                cls_score, _, _ = map(np.array, zip(*results))
                 del _,
                 if self.untrimmed:
                     sampled_idx_pre, _, cls_label = self.get_sample_points_on_untrimmed(return_cls_label=True)
@@ -225,7 +227,7 @@ class APNDataset(Dataset):
                 continue
 
             if metric == 'MAE':
-                _, progression = map(np.array, zip(*results))
+                _, progression, _ = map(np.array, zip(*results))
                 del _
                 if self.untrimmed:
                     sampled_idx_pre, _, gt_progression = self.get_sample_points_on_untrimmed(return_gt_progs=True)

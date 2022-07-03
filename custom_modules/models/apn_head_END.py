@@ -8,7 +8,7 @@ from mmaction.models.builder import HEADS, build_loss
 
 
 @HEADS.register_module()
-class APNHead(nn.Module, metaclass=ABCMeta):
+class APNHead_END(nn.Module, metaclass=ABCMeta):
     """Regression head for APN.
 
     Args:
@@ -40,26 +40,29 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
 
-        # self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
         if self.dropout_ratio > 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:
             self.dropout = nn.Identity()
 
         self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
+        self.end_fc = nn.Linear(self.in_channels, 3)
 
         self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
         self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
 
     def init_weights(self):
         kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
+        kaiming_init(self.end_fc, a=0, nonlinearity='relu', distribution='uniform')
         kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
         constant_init(self.coral_bias, 0)
 
     def forward(self, x):
-        # x = self.avg_pool(x)
+        x = self.avg_pool(x)
         x = x.view(x.shape[0], -1)
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
         reg_score = self.coral_fc(x) + self.coral_bias
-        return cls_score, reg_score
+        end_score = self.end_fc(x)
+        return cls_score, reg_score, end_score

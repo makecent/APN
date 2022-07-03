@@ -4,16 +4,22 @@ _base_ = [
 
 # model settings
 model = dict(
-    type='APN',
-    backbone=dict(
+    type='APN_GL',
+    global_backbone=dict(
+        type='TANet',
+        pretrained='torchvision://resnet50',
+        depth=50,
+        num_segments=8,
+        tam_cfg=dict()),
+    local_backbone=dict(
         type='ResNet3d_sony',
         init_cfg=dict(type='Pretrained',
-                      checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_flow.pth'),
-        modality='flow'),
+                      checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_rgb.pth'),
+        modality='rgb'),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        in_channels=1024,
+        in_channels=3072,
         dropout_ratio=0.5))
 
 # input configuration
@@ -33,10 +39,11 @@ ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
 ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
-    mean=[128, 128], std=[128, 128], to_bgr=False)
+    mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchGlobalFrames', sample_range=640, clip_len=1, num_clips=8),
     dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
@@ -48,8 +55,9 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchGlobalFrames', sample_range=640, clip_len=1, num_clips=8),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224)),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -57,8 +65,9 @@ val_pipeline = [
 ]
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchGlobalFrames', sample_range=640, clip_len=1, num_clips=8),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(224, 224)),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -66,23 +75,23 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=10,
+    videos_per_gpu=4,
     workers_per_gpu=8,
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
         pipeline=train_pipeline,
         data_prefixes=data_train,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB'
     ),
     val=dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=val_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB',
         untrimmed=True
     ),
     test=dict(
@@ -90,8 +99,8 @@ data = dict(
         ann_files=ann_file_val,
         pipeline=test_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB',
         untrimmed=True
     ))
 
@@ -110,7 +119,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_thumos14_flow/'
+work_dir = './work_dirs/apn_r3dsony_GL_32x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/results.pkl')
 
 # testing config
