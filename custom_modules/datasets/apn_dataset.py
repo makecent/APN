@@ -206,8 +206,8 @@ class APNDataset(Dataset):
                 if isinstance(topk, int):
                     topk = (topk,)
 
-                cls_score, _, = map(np.array, zip(*results))
-                del _,
+                cls_score, _ = map(np.array, zip(*results))
+                del _
                 if self.untrimmed:
                     sampled_idx_pre, _, cls_label = self.get_sample_points_on_untrimmed(return_cls_label=True)
                     cls_score = cls_score[sampled_idx_pre]
@@ -247,7 +247,7 @@ class APNDataset(Dataset):
                 det_results = self.apn_action_detection(results_vs_video, **metric_options.get('mAP', {}))
 
                 # Computer mAP
-                iou_thr = metric_options.get('mAP', {}).get('iou_thr', np.linspace(0.1, 1, 10))
+                iou_thr = metric_options.get('mAP', {}).get('iou_thr', 0.5)
                 iou_thrs = [iou_thr] if isinstance(iou_thr, float) else iou_thr
                 mean_aps = []
                 annotations = self.get_ann_info()

@@ -8,7 +8,7 @@ from mmaction.models.builder import HEADS, build_loss
 
 
 @HEADS.register_module()
-class APNHead(nn.Module, metaclass=ABCMeta):
+class APNHead_GL(nn.Module, metaclass=ABCMeta):
     """Regression head for APN.
 
     Args:
@@ -40,7 +40,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
 
-        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        # self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
         if self.dropout_ratio > 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:
@@ -57,7 +57,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         constant_init(self.coral_bias, 0)
 
     def forward(self, x):
-        x = self.avg_pool(x)
+        # x = self.avg_pool(x)
         x = x.view(x.shape[0], -1)
         x = self.dropout(x)
         cls_score = self.cls_fc(x)

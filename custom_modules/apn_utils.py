@@ -113,7 +113,7 @@ def apn_detection_on_single_video(results):
         det_bbox,
         score,
         nms_kwargs.get('score_thr', 0.),
-        nms_kwargs.get('nms', dict(iou_thr=0.4, class_agnostic=True)),
+        nms_kwargs.get('nms', dict(iou_thr=0.4)),
         nms_kwargs.get('max_per_video', -1))
     return det_bbox, det_label
 
@@ -131,10 +131,8 @@ def apn_detection_on_vector(progression_vector, min_e=60, max_s=40, min_L=60, sc
     if pytorch:
         progression_vector = torch.from_numpy(progression_vector).cuda()
     progs = progression_vector.squeeze()
-    # start_candidates = torch.where(progs < max_s)[0] if pytorch else np.where(progs < max_s)[0]
-    # end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs > min_e)[0]
     start_candidates = torch.where(progs < max_s)[0] if pytorch else np.where(progs < max_s)[0]
-    end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs < min_e)[0]
+    end_candidates = torch.where(progs > min_e)[0] if pytorch else np.where(progs > min_e)[0]
     dets = []
     scores = []
 
