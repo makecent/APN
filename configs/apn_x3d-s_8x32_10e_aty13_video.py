@@ -13,8 +13,8 @@ model = dict(
         dropout_ratio=0.5))
 
 # input configuration
-clip_len = 16
-frame_interval = 8
+clip_len = 8
+frame_interval = 32
 
 # dataset settings
 dataset_type = 'ActivityNet'
@@ -34,8 +34,6 @@ train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
     dict(type='LabelToOrdinal'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
@@ -47,8 +45,7 @@ val_pipeline = [
     dict(type='DecordInit'),
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -58,8 +55,7 @@ test_pipeline = [
     dict(type='DecordInit'),
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
