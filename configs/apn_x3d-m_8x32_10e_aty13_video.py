@@ -106,4 +106,4 @@ lr_config = dict(policy='Fixed',
                  warmup_by_epoch=True)
 total_epochs = 10
 
-load_from = "https://download.openmmlab.com/mmaction/recognition/x3d/facebook/x3d_s_facebook_13x6x1_kinetics400_rgb_20201027-623825a0.pth"
+load_from = "https://download.openmmlab.com/mmaction/recognition/x3d/facebook/x3d_m_facebook_16x5x1_kinetics400_rgb_20201027-3f42382a.pth"
