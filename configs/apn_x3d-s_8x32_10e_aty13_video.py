@@ -106,11 +106,4 @@ lr_config = dict(policy='Fixed',
                  warmup_by_epoch=True)
 total_epochs = 10
 
-# output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_aty13_video./'
-output_config = dict(out=f'{work_dir}/progressions.pkl')
-
-# testing config
-eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))
-
 load_from = "https://download.openmmlab.com/mmaction/recognition/x3d/facebook/x3d_s_facebook_13x6x1_kinetics400_rgb_20201027-623825a0.pth"
