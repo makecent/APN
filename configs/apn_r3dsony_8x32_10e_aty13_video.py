@@ -17,8 +17,8 @@ model = dict(
         dropout_ratio=0.5))
 
 # input configuration
-clip_len = 32
-frame_interval = 4
+clip_len = 8
+frame_interval = 32
 
 # dataset settings
 dataset_type = 'ActivityNet'
@@ -109,10 +109,3 @@ lr_config = dict(policy='Fixed',
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
-
-# output settings
-work_dir = './work_dirs/apn_r3dsony_32x4_10e_aty13_video/'
-output_config = dict(out=f'{work_dir}/progressions.pkl')
-
-# testing config
-eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))
