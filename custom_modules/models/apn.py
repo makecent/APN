@@ -62,6 +62,13 @@ class APN(nn.Module):
         progression = decode_progression(reg_score)
         return list(zip(cls_score.cpu().numpy(), progression.cpu().numpy()))
 
+    def forward(self, *args, return_loss=True, **kwargs):
+        """Define the computation performed at every call."""
+        if return_loss:
+            return self.forward_train(*args, **kwargs)
+
+        return self.forward_test(*args, **kwargs)
+
     def train_step(self, data_batch, optimizer, **kwargs):
         losses = self.forward(**data_batch)
         loss, log_vars = BaseRecognizer._parse_losses(losses)
