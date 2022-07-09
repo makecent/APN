@@ -1,29 +1,36 @@
 import torch
+from torch import nn
 
 from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
 from mmaction.models.recognizers import BaseRecognizer
-from mmaction.core import top_k_accuracy, mean_class_accuracy
+from mmaction.core import top_k_accuracy
 from ..apn_utils import binary_accuracy, decode_progression, progression_mae
-
+from mmcv.runner import auto_fp16
 
 @LOCALIZERS.register_module()
-class APN(BaseRecognizer):
+class APN(nn.Module):
     """APN model framework."""
 
     def __init__(self,
                  backbone,
                  cls_head):
-        super(BaseRecognizer, self).__init__()
+        super().__init__()
         self.backbone = build_backbone(backbone)
         self.backbone_from = 'mmaction2'
         self.cls_head = build_head(cls_head)
         self.init_weights()
 
+    def init_weights(self):
+        """Weight initialization for model."""
+        self.backbone.init_weights()
+        self.cls_head.init_weights()
+
+    @auto_fp16()
     def _forward(self, imgs):
         # [N, 1, C, T, H, W] -> [N, C, T, H, W]
         imgs = imgs.reshape((-1,) + imgs.shape[2:])
 
-        x = self.extract_feat(imgs)
+        x = self.backbone(imgs)
         output = self.cls_head(x)
 
         return output
@@ -55,7 +62,19 @@ class APN(BaseRecognizer):
         progression = decode_progression(reg_score)
         return list(zip(cls_score.cpu().numpy(), progression.cpu().numpy()))
 
-    def forward_gradcam(self, imgs):
-        """Unused, just complete the abstract function of father class"""
-        assert self.with_cls_head
-        return self._do_test(imgs)
+    def train_step(self, data_batch, optimizer, **kwargs):
+        losses = self.forward(**data_batch)
+        loss, log_vars = BaseRecognizer._parse_losses(losses)
+
+        outputs = dict(
+            loss=loss,
+            log_vars=log_vars,
+            num_samples=len(next(iter(data_batch.values()))))
+
+        return outputs
+
+    def val_step(self, data_batch, optimizer, **kwargs):
+        results = self.forward(return_loss=False, **data_batch)
+        outputs = dict(results=results)
+
+        return outputs
