@@ -5,15 +5,11 @@ _base_ = [
 # model settings
 model = dict(
     type='APN',
-    backbone=dict(
-        type='ResNet3d_sony',
-        init_cfg=dict(type='Pretrained',
-                      checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_rgb.pth'),
-        modality='rgb'),
+    backbone=dict(type='X3D_no_group', gamma_w=1, gamma_b=2.25, gamma_d=2.2),
     cls_head=dict(
         type='APNHead',
         num_classes=200,
-        in_channels=1024,
+        in_channels=432,
         dropout_ratio=0.5))
 
 # input configuration
@@ -38,7 +34,7 @@ train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
     dict(type='LabelToOrdinal'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(160, 160), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
@@ -49,7 +45,7 @@ val_pipeline = [
     dict(type='DecordInit'),
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(160, 160), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -59,7 +55,7 @@ test_pipeline = [
     dict(type='DecordInit'),
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='DecordDecode'),
-    dict(type='Resize', scale=(224, 224), keep_ratio=False),
+    dict(type='Resize', scale=(160, 160), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -67,8 +63,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=32,
-    workers_per_gpu=4,
+    videos_per_gpu=10,
+    workers_per_gpu=8,
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
@@ -97,8 +93,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(interval=41750, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater', by_epoch=False)
-checkpoint_config = dict(interval=41750, by_epoch=False)  # 41750 iter is half-epoch when batch_size=256
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='Adam', lr=1e-4)
@@ -110,3 +105,5 @@ lr_config = dict(policy='Fixed',
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
+
+load_from = "https://download.openmmlab.com/mmaction/recognition/x3d/facebook/x3d_s_facebook_13x6x1_kinetics400_rgb_20201027-623825a0.pth"
