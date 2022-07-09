@@ -54,3 +54,8 @@ class APN(BaseRecognizer):
         reg_score = reg_score.sigmoid()
         progression = decode_progression(reg_score)
         return list(zip(cls_score.cpu().numpy(), progression.cpu().numpy()))
+
+    def forward_gradcam(self, imgs):
+        """Unused, just complete the abstract function of father class"""
+        assert self.with_cls_head
+        return self._do_test(imgs)
