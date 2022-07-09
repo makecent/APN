@@ -1,20 +1,21 @@
 import torch
 
 from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
-from mmaction.models.localizers import BaseTAGClassifier
+from mmaction.models.recognizers import BaseRecognizer
 from mmaction.core import top_k_accuracy, mean_class_accuracy
 from ..apn_utils import binary_accuracy, decode_progression, progression_mae
 
 
 @LOCALIZERS.register_module()
-class APN(BaseTAGClassifier):
+class APN(BaseRecognizer):
     """APN model framework."""
 
     def __init__(self,
                  backbone,
                  cls_head):
-        super(BaseTAGClassifier, self).__init__()
+        super(BaseRecognizer, self).__init__()
         self.backbone = build_backbone(backbone)
+        self.backbone_from = 'mmaction2'
         self.cls_head = build_head(cls_head)
         self.init_weights()
 
