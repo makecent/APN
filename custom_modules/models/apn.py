@@ -19,6 +19,7 @@ class APN(nn.Module):
         self.backbone_from = 'mmaction2'
         self.cls_head = build_head(cls_head)
         self.init_weights()
+        self.fp16_enabled = True
 
     def init_weights(self):
         """Weight initialization for model."""
