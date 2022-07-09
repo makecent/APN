@@ -110,3 +110,4 @@ lr_config = dict(policy='Fixed',
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
+fp16 = dict()
