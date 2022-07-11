@@ -41,17 +41,17 @@ class APN(nn.Module):
         class_label = class_label.squeeze(-1)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
 
-        cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
-                                 class_label.detach().cpu().numpy(),
-                                 topk=(1,))
-        losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
-        losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
-
-        reg_score = reg_score.sigmoid()
-        reg_acc = binary_accuracy(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
-        reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
-        losses[f'reg_acc'] = torch.tensor(reg_acc, device=reg_score.device)
-        losses[f'reg_mae'] = torch.tensor(reg_mae, device=reg_score.device)
+        # cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
+        #                          class_label.detach().cpu().numpy(),
+        #                          topk=(1,))
+        # losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
+        # losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
+        #
+        # reg_score = reg_score.sigmoid()
+        # reg_acc = binary_accuracy(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
+        # reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
+        # losses[f'reg_acc'] = torch.tensor(reg_acc, device=reg_score.device)
+        # losses[f'reg_mae'] = torch.tensor(reg_mae, device=reg_score.device)
 
         return losses
 
@@ -61,7 +61,7 @@ class APN(nn.Module):
         cls_score = cls_score.softmax(-1)
         reg_score = reg_score.sigmoid()
         progression = decode_progression(reg_score)
-        return list(zip(cls_score.cpu().numpy(), progression.cpu().numpy()))
+        return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 
     def forward(self, *args, return_loss=True, **kwargs):
         """Define the computation performed at every call."""

@@ -90,6 +90,7 @@ data = dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=test_pipeline,
+        test_sampling=100,
         data_prefixes=data_val,
         filename_tmpl='img_{:05}.jpg',
         modality='Video',
