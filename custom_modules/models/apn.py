@@ -42,24 +42,30 @@ class APN(nn.Module):
         return output
 
     def forward_train(self, imgs, progression_label=None, class_label=None):
+        hard_class_label = class_label
+
         if self.blending is not None:
             imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
+
         if progression_label.ndim < 3:
             ordinal_label = torch.zeros(imgs.shape[0], self.cls_head.num_stages).type_as(progression_label)
             denormalized_prog = (progression_label * self.cls_head.num_stages).round().int()
-            for prog in denormalized_prog:
-                ordinal_label[:prog] = 1.0
+            for i, prog in enumerate(denormalized_prog):
+                ordinal_label[i, :prog] = 1.0
             progression_label = ordinal_label
+
         cls_score, reg_score = self._forward(imgs)
+
         class_label = class_label.squeeze(1)
+        hard_class_label = hard_class_label.squeeze(1)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
+        if not self.blending:
+            cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
+                                     hard_class_label.detach().cpu().numpy(),
+                                     topk=(1,))
+            losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
 
-        cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
-                                 class_label.detach().cpu().numpy(),
-                                 topk=(1,))
-        losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
         losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
-
         reg_score = reg_score.sigmoid()
         reg_acc = binary_accuracy(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
         reg_mae = progression_mae(reg_score.detach().cpu().numpy(), progression_label.detach().cpu().numpy())
