@@ -51,7 +51,6 @@ class APN(nn.Module):
                 ordinal_label[:prog] = 1.0
             progression_label = ordinal_label
         cls_score, reg_score = self._forward(imgs)
-        print(cls_score.dtype)
         class_label = class_label.squeeze(1)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
 
