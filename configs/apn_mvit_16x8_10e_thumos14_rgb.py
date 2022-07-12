@@ -105,7 +105,7 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW', lr=1.6e-3, weight_decay=0.05)  # this lr is for batch-size=64
+optimizer = dict(type='AdamW', lr=1.6e-3, weight_decay=0.05)  # this lr is for batch-size=512
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
 lr_config = dict(policy='CosineAnnealing',
