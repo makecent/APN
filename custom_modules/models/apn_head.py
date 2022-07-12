@@ -27,9 +27,10 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  num_stages=100,
                  in_channels=2048,
                  hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLoss'),
+                 loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
                  loss_reg=dict(type='BCELossWithLogits'),
-                 dropout_ratio=0.5):
+                 dropout_ratio=0.5,
+                 avg3d=True):
         super().__init__()
 
         self.num_classes = num_classes
@@ -40,7 +41,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
 
-        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1))
+        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
         if self.dropout_ratio > 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:

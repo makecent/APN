@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
 from mmaction.models.recognizers import BaseRecognizer
@@ -13,13 +14,17 @@ class APN(nn.Module):
 
     def __init__(self,
                  backbone,
-                 cls_head):
+                 cls_head,
+                 blending=False):
         super().__init__()
         self.backbone = build_backbone(backbone)
-        self.backbone_from = 'mmaction2'
         self.cls_head = build_head(cls_head)
         self.init_weights()
         self.fp16_enabled = True
+        if blending:
+            from mmcv.utils import build_from_cfg
+            from mmaction.datasets.builder import BLENDINGS
+            self.blending = build_from_cfg(blending, BLENDINGS)
 
     def init_weights(self):
         """Weight initialization for model."""
@@ -37,8 +42,16 @@ class APN(nn.Module):
         return output
 
     def forward_train(self, imgs, progression_label=None, class_label=None):
+        if self.blending is not None:
+            imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
+        if progression_label.ndim < 3:
+            ordinal_label = torch.zeros(imgs.shape[0], self.cls_head.num_stages).type_as(progression_label)
+            denormalized_prog = (progression_label * self.cls_head.num_stages).round().int()
+            for prog in denormalized_prog:
+                ordinal_label[:prog] = 1.0
+            progression_label = ordinal_label
         cls_score, reg_score = self._forward(imgs)
-        class_label = class_label.squeeze(-1)
+        class_label = class_label.squeeze(1)
         losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
 
         cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),

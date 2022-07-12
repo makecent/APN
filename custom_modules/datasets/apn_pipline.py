@@ -1,7 +1,10 @@
 import numpy as np
 from mmaction.datasets.builder import PIPELINES
 from mmaction.datasets.pipelines import SampleFrames
-
+from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
+from mmcv.utils import build_from_cfg
+import torch
+from torch.nn import functional as F
 
 @PIPELINES.register_module()
 class FetchStackedFrames(object):
@@ -82,3 +85,78 @@ class LabelToOrdinal(object):
         results['progression_label'] = ordinal_label
         return results
 
+
+@BLENDINGS.register_module(force=True)
+class MixupBlendingProg(MixupBlending):
+
+    def __call__(self, imgs, class_label, progression_label):
+        one_hot_label = F.one_hot(class_label, num_classes=self.num_classes)
+
+        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, one_hot_label, progression_label)
+
+        return mixed_imgs, mixed_class_label, mixed_prog_label
+
+    def do_blending(self, imgs, class_label, progression_label):
+
+        lam = self.beta.sample()
+        batch_size = imgs.size(0)
+        rand_index = torch.randperm(batch_size)
+
+        mixed_imgs = lam * imgs + (1 - lam) * imgs[rand_index, :]
+        mixed_class_label = lam * class_label + (1 - lam) * class_label[rand_index, :]
+        mixed_prog_label = lam * progression_label + (1 - lam) * progression_label[rand_index, :]
+
+        return mixed_imgs, mixed_class_label, mixed_prog_label
+
+
+@BLENDINGS.register_module(force=True)
+class CutmixBlendingProg(CutmixBlending):
+
+    def __call__(self, imgs, class_label, progression_label):
+        one_hot_label = F.one_hot(class_label, num_classes=self.num_classes)
+
+        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, one_hot_label, progression_label)
+
+        return mixed_imgs, mixed_class_label, mixed_prog_label
+
+    def do_blending(self, imgs, class_label, progression_label):
+
+        batch_size = imgs.size(0)
+        rand_index = torch.randperm(batch_size)
+        lam = self.beta.sample()
+
+        bbx1, bby1, bbx2, bby2 = self.rand_bbox(imgs.size(), lam)
+        imgs[:, ..., bby1:bby2, bbx1:bbx2] = imgs[rand_index, ..., bby1:bby2,
+                                                  bbx1:bbx2]
+        lam = 1 - (1.0 * (bbx2 - bbx1) * (bby2 - bby1) /
+                   (imgs.size()[-1] * imgs.size()[-2]))
+
+        mixed_class_label = lam * class_label + (1 - lam) * class_label[rand_index, :]
+        mixed_prog_label = lam * progression_label + (1 - lam) * progression_label[rand_index, :]
+
+        return imgs, mixed_class_label, mixed_prog_label
+
+
+@BLENDINGS.register_module()
+class BatchAugBlendingProg:
+    """Implementing
+        https://openaccess.thecvf.com/content_CVPR_2020/papers/Hoffer_Augment_Your_Batch_Improving_Generalization_Through_Instance_Repetition_CVPR_2020_paper.pdf
+        Only support repeated blending.
+    """
+
+    def __init__(self,
+                 blendings=(dict(type='MixupBlendingProg', num_classes=200, alpha=.8),
+                            dict(type='CutmixBlendingProg', num_classes=200, alpha=1.))):
+        self.blendings = [build_from_cfg(bld, BLENDINGS) for bld in blendings]
+
+    def __call__(self, imgs, class_label, progression_label):
+        repeated_imgs = []
+        repeated_cls_label = []
+        repeated_prog_label = []
+
+        for bld in self.blendings:
+            mixed_imgs, mixed_class_label, mixed_prog_label = bld(imgs, class_label, progression_label)
+            repeated_imgs.append(mixed_imgs)
+            repeated_cls_label.append(mixed_class_label)
+            repeated_prog_label.append(mixed_prog_label)
+        return torch.cat(repeated_imgs), torch.cat(repeated_cls_label), torch.cat(repeated_prog_label)

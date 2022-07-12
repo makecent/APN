@@ -1,7 +1,7 @@
 import copy
 import os.path as osp
 from itertools import repeat
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count
 from collections import OrderedDict
 import numpy as np
 from mmaction.core import top_k_accuracy
@@ -10,8 +10,6 @@ from mmaction.datasets.pipelines import Compose
 from mmcv import dump, track_parallel_progress
 from mmcv.utils import print_log
 from torch.utils.data import Dataset
-from tqdm import tqdm
-from random import shuffle, sample
 
 from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
 from custom_modules.mmdet_utils import bbox2result
@@ -123,8 +121,8 @@ class APNDataset(Dataset):
         return gt_infos, video_infos
 
     def load_annotations(self):
-        # Training and Validation dataset (trimmed)
         if not self.untrimmed:
+            # Training and Validation dataset (trimmed)
             frame_infos = []
             for video_name, video_info in self.video_infos.items():
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
@@ -139,8 +137,8 @@ class APNDataset(Dataset):
                                                class_label=label,
                                                progression_label=progression_label))
                         frame_infos.append(frame_info)
-        # Testing dataset (untrimmed)
         else:
+            # Testing dataset (untrimmed)
             frame_infos = []
             for video_name, video_info in self.video_infos.items():
                 # video_name = osp.join(data_prefix, video_name)

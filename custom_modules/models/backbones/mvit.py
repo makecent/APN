@@ -13,7 +13,7 @@ class MViTB(torch.nn.Module):
 
     def forward(self, x):
         x = self.model(x)
-        return x
+        return x[:, 0, :]
 
     def init_weights(self):
         """Initiate the parameters either from existing checkpoint or from

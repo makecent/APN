@@ -3,7 +3,7 @@ import torch
 from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
 from mmaction.models.localizers import BaseTAGClassifier
 from mmaction.core import top_k_accuracy, mean_class_accuracy
-from ..apn_utils import binary_accuracy, decode_progression, progression_mae
+from custom_modules.apn_utils import binary_accuracy, decode_progression, progression_mae
 
 
 @LOCALIZERS.register_module()
