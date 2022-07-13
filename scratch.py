@@ -25,3 +25,15 @@ for i in track_iter_progress(list(range(10000))):
 
     with torch.no_grad():
         out = model(inputs, return_loss=False)
+
+
+from mmaction.datasets.pipelines import RawFrameDecode
+import numpy as np
+f = RawFrameDecode()
+results = dict(frame_dir='/home/louis/PycharmProjects/APN/my_data/thumos14/rawframes/test/video_test_0000004',
+               frame_inds=np.arange(100),
+               filename_tmpl='flow_{}_{:05}.jpg',
+               modality='Flow',
+               start_index=0)
+t = f(results)
+tt = np.array(t['imgs'])

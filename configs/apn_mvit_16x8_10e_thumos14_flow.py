@@ -33,7 +33,7 @@ ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
 ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
+    mean=[128, 128], std=[128, 128], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
@@ -79,16 +79,16 @@ data = dict(
         ann_files=ann_file_train,
         pipeline=train_pipeline,
         data_prefixes=data_train,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB'
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
     ),
     val=dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=val_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
         untrimmed=True
     ),
     test=dict(
@@ -96,8 +96,8 @@ data = dict(
         ann_files=ann_file_val,
         pipeline=test_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
         untrimmed=True
     ))
 
