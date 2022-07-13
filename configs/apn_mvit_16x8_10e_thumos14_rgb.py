@@ -38,7 +38,7 @@ img_norm_cfg = dict(
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    # dict(type='LabelToOrdinal'),
+    dict(type='LabelToOrdinal'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),

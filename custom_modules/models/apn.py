@@ -47,12 +47,12 @@ class APN(nn.Module):
         if self.blending is not None:
             imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
 
-        if progression_label.ndim < 3:
-            ordinal_label = torch.zeros(imgs.shape[0], self.cls_head.num_stages).type_as(progression_label)
-            denormalized_prog = (progression_label * self.cls_head.num_stages).round().int()
-            for i, prog in enumerate(denormalized_prog):
-                ordinal_label[i, :prog] = 1.0
-            progression_label = ordinal_label
+        # if progression_label.ndim < 3:
+        #     ordinal_label = torch.zeros(imgs.shape[0], self.cls_head.num_stages).type_as(progression_label)
+        #     denormalized_prog = (progression_label * self.cls_head.num_stages).round().int()
+        #     for i, prog in enumerate(denormalized_prog):
+        #         ordinal_label[i, :prog] = 1.0
+        #     progression_label = ordinal_label
 
         cls_score, reg_score = self._forward(imgs)
 
