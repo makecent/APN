@@ -105,7 +105,16 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW', lr=0.2e-3, weight_decay=0.05)  # 1.6e-3 is for batch-size=512
+optimizer = dict(type='AdamW',
+                 lr=0.2e-3,   # 1.6e-3 is for batch-size=512
+                 weight_decay=0.05,
+                 paramwise_cfg=dict(
+                     custom_keys={
+                         '.backbone.cls_positional_encoding.cls_token': dict(decay_mult=0.0),
+                         '.backbone.cls_positional_encoding.pos_embed_spatial': dict(decay_mult=0.0),
+                         '.backbone.cls_positional_encoding.pos_embed_temporal': dict(decay_mult=0.0),
+                         '.backbone.cls_positional_encoding.pos_embed_class': dict(decay_mult=0.0)}),
+                 )
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
 lr_config = dict(policy='CosineAnnealing',

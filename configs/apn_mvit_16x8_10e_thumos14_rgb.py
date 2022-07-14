@@ -113,7 +113,7 @@ optimizer = dict(type='AdamW',
                          '.backbone.cls_positional_encoding.cls_token': dict(decay_mult=0.0),
                          '.backbone.cls_positional_encoding.pos_embed_spatial': dict(decay_mult=0.0),
                          '.backbone.cls_positional_encoding.pos_embed_temporal': dict(decay_mult=0.0),
-                         '.backbone.cls_positional_encoding.pos_embed_class': dict(decay_mult=0.0),}),
+                         '.backbone.cls_positional_encoding.pos_embed_class': dict(decay_mult=0.0)}),
                  )
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
