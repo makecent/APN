@@ -118,8 +118,7 @@ evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rul
 optimizer = dict(type='Adam', lr=1e-4)
 optimizer_config = dict(grad_clip=dict(max_norm=40))
 # learning policy
-lr_config = dict(policy='CosineAnnealing',
-                 min_lr_ratio=0.01,
+lr_config = dict(policy='Fixed',
                  warmup='linear',
                  warmup_ratio=0.01,
                  warmup_iters=1,
