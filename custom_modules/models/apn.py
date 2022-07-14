@@ -15,7 +15,7 @@ class APN(nn.Module):
     def __init__(self,
                  backbone,
                  cls_head,
-                 blending=False):
+                 blending=None):
         super().__init__()
         self.backbone = build_backbone(backbone)
         self.cls_head = build_head(cls_head)
