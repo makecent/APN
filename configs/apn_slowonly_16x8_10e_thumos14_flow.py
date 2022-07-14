@@ -20,7 +20,7 @@ model = dict(
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        in_channels=768,
+        in_channels=2048,
         dropout_ratio=0.5,
         avg3d=False),
     blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
