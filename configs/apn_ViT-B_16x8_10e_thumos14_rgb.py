@@ -5,23 +5,16 @@ _base_ = [
 # model settings
 model = dict(
     type='APN',
-    backbone=dict(
-        type='ResNet3dSlowOnly',
-        depth=50,
-        pretrained=None,
-        lateral=False,
-        conv1_kernel=(1, 7, 7),
-        conv1_stride_t=1,
-        pool1_stride_t=1,
-        inflate=(0, 0, 1, 1),
-        norm_eval=False,
-        in_channels=2,
-        with_pool2=False),
+    backbone=dict(type='VisionTransformer3D',
+                  variant='vit_base_patch16_224',
+                  pretrained='checkpoints/ViT_MAE/videomae_base_224_k400_finetuned.pth',
+                  num_classes=0),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        in_channels=2048,
-        dropout_ratio=0.5),
+        in_channels=768,
+        dropout_ratio=0.5,
+        avg3d=False),
     blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
                                                           dict(type='CutmixBlendingProg', num_classes=20, alpha=1.))),
 )
@@ -43,7 +36,7 @@ ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
 ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
-    mean=[128, 128], std=[128, 128], to_bgr=False)
+    mean=[128, 128, 128], std=[128, 128, 128], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
@@ -82,23 +75,23 @@ test_pipeline = [
 ]
 
 data = dict(
-    videos_per_gpu=8,
+    videos_per_gpu=4,
     workers_per_gpu=4,
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
         pipeline=train_pipeline,
         data_prefixes=data_train,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB'
     ),
     val=dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=val_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB',
         untrimmed=True
     ),
     test=dict(
@@ -106,8 +99,8 @@ data = dict(
         ann_files=ann_file_val,
         pipeline=test_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='flow_{}_{:05}.jpg',
-        modality='Flow',
+        filename_tmpl='img_{:05}.jpg',
+        modality='RGB',
         untrimmed=True
     ))
 
@@ -125,4 +118,3 @@ lr_config = dict(policy='Fixed',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
-load_from = "https://download.openmmlab.com/mmaction/recognition/slowonly/slowonly_r50_8x8x1_256e_kinetics400_flow/slowonly_r50_8x8x1_256e_kinetics400_flow_20200704-6b384243.pth"
