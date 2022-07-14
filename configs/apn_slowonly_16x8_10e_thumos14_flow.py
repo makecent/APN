@@ -5,7 +5,16 @@ _base_ = [
 # model settings
 model = dict(
     type='APN',
-    backbone=dict(type='MViTB'),
+    backbone=dict(
+        type='ResNet3dSlowOnly',
+        depth=50,
+        pretrained='torchvision://resnet50',
+        lateral=False,
+        conv1_kernel=(1, 7, 7),
+        conv1_stride_t=1,
+        pool1_stride_t=1,
+        inflate=(0, 0, 1, 1),
+        norm_eval=False),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
@@ -33,7 +42,7 @@ ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
 ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
 img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
+    mean=[128, 128], std=[128, 128], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
@@ -43,7 +52,7 @@ train_pipeline = [
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
-    dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
+    # dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
@@ -79,16 +88,16 @@ data = dict(
         ann_files=ann_file_train,
         pipeline=train_pipeline,
         data_prefixes=data_train,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB'
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
     ),
     val=dict(
         type=dataset_type,
         ann_files=ann_file_val,
         pipeline=val_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
         untrimmed=True
     ),
     test=dict(
@@ -96,8 +105,8 @@ data = dict(
         ann_files=ann_file_val,
         pipeline=test_pipeline,
         data_prefixes=data_val,
-        filename_tmpl='img_{:05}.jpg',
-        modality='RGB',
+        filename_tmpl='flow_{}_{:05}.jpg',
+        modality='Flow',
         untrimmed=True
     ))
 
@@ -105,16 +114,7 @@ data = dict(
 evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
-optimizer = dict(type='AdamW',
-                 lr=0.2e-3,   # 1.6e-3 is for batch-size=512
-                 weight_decay=0.05,
-                 paramwise_cfg=dict(
-                     custom_keys={
-                         '.backbone.cls_positional_encoding.cls_token': dict(decay_mult=0.0),
-                         '.backbone.cls_positional_encoding.pos_embed_spatial': dict(decay_mult=0.0),
-                         '.backbone.cls_positional_encoding.pos_embed_temporal': dict(decay_mult=0.0),
-                         '.backbone.cls_positional_encoding.pos_embed_class': dict(decay_mult=0.0),}),
-                 )
+optimizer = dict(type='AdamW', lr=0.2e-3, weight_decay=0.05)  # 1.6e-3 is for batch-size=512
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
 lr_config = dict(policy='CosineAnnealing',
@@ -125,3 +125,4 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
+load_from = "https://download.openmmlab.com/mmaction/recognition/slowonly/slowonly_r50_8x8x1_256e_kinetics400_flow/slowonly_r50_8x8x1_256e_kinetics400_flow_20200704-6b384243.pth"
