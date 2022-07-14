@@ -21,6 +21,7 @@ class APN(nn.Module):
         self.cls_head = build_head(cls_head)
         self.init_weights()
         self.fp16_enabled = False
+        self.blending = blending
         if blending:
             from mmcv.utils import build_from_cfg
             from mmaction.datasets.builder import BLENDINGS
