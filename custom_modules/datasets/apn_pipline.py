@@ -119,6 +119,26 @@ class CutmixBlendingProg(CutmixBlending):
 
         return mixed_imgs, mixed_class_label, mixed_prog_label
 
+    @staticmethod
+    def rand_bbox(img_size, lam):
+        """Generate a random boudning box."""
+        w = img_size[-1]
+        h = img_size[-2]
+        cut_rat = torch.sqrt(1. - lam)
+        cut_w = torch.tensor(int(w * cut_rat))
+        cut_h = torch.tensor(int(h * cut_rat))
+
+        # uniform
+        cx = torch.randint(w, (1, ))[0]
+        cy = torch.randint(h, (1, ))[0]
+
+        bbx1 = torch.clamp(cx - torch.div(cut_w, 2, rounding_mode='floor'), 0, w)
+        bby1 = torch.clamp(cy - torch.div(cut_h, 2, rounding_mode='floor'), 0, h)
+        bbx2 = torch.clamp(cx + torch.div(cut_w, 2, rounding_mode='floor'), 0, w)
+        bby2 = torch.clamp(cy + torch.div(cut_h, 2, rounding_mode='floor'), 0, h)
+
+        return bbx1, bby1, bbx2, bby2
+
     def do_blending(self, imgs, class_label, progression_label):
 
         batch_size = imgs.size(0)
