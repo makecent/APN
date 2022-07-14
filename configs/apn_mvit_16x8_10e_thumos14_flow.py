@@ -12,8 +12,8 @@ model = dict(
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
-    blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
-                                                          dict(type='CutmixBlendingProg', num_classes=20, alpha=1.))),
+    # blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
+                                                          # dict(type='CutmixBlendingProg', num_classes=20, alpha=1.))),
 )
 
 # input configuration
@@ -39,8 +39,8 @@ train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='LabelToOrdinal'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='RandomResizedCrop'),
+    # dict(type='Resize', scale=(-1, 256)),
+    # dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     # dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
@@ -48,13 +48,12 @@ train_pipeline = [
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
     dict(type='ToTensor', keys=['imgs', 'progression_label', 'class_label']),
-    dict(type='RandomErasing')
+    # dict(type='RandomErasing')
 ]
 val_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),
@@ -63,8 +62,7 @@ val_pipeline = [
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(-1, 256)),
-    dict(type='CenterCrop', crop_size=224),
+    dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs'], meta_keys=()),

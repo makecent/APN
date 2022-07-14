@@ -28,7 +28,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  in_channels=2048,
                  hid_channels=256,
                  loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 loss_reg=dict(type='BCELossWithLogits'),
+                 loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
                  dropout_ratio=0.5,
                  avg3d=True):
         super().__init__()
