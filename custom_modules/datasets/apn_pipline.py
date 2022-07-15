@@ -1,9 +1,12 @@
 import numpy as np
 from mmaction.datasets.builder import PIPELINES
 from mmaction.datasets.pipelines import SampleFrames
+from mmaction.datasets.pipelines import ThreeCrop as _ThreeCrop
+from mmaction.datasets.pipelines.augmentations import _init_lazy_if_proper
 from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
 from mmcv.utils import build_from_cfg
 import torch
+import warnings
 from torch.nn import functional as F
 
 @PIPELINES.register_module()
@@ -180,3 +183,60 @@ class BatchAugBlendingProg:
             repeated_cls_label.append(mixed_class_label)
             repeated_prog_label.append(mixed_prog_label)
         return torch.cat(repeated_imgs), torch.cat(repeated_cls_label), torch.cat(repeated_prog_label)
+
+@PIPELINES.register_module(force=True)
+class ThreeCrop(_ThreeCrop):
+    """
+    Support short-side center crop now;
+    Repeat progression label three times;
+    """
+    def __call__(self, results):
+        _init_lazy_if_proper(results, False)
+        if 'gt_bboxes' in results or 'proposals' in results:
+            warnings.warn('ThreeCrop cannot process bounding boxes')
+
+        imgs = results['imgs']
+        img_h, img_w = results['imgs'][0].shape[:2]
+        crop_w, crop_h = self.crop_size
+        assert crop_h <= img_h and crop_w <= img_w
+
+        if img_w >= img_h:
+            w_step = (img_w - crop_w) // 2
+            h_offset = (img_h - crop_h) // 2
+            offsets = [
+                (0, h_offset),  # left
+                (2 * w_step, h_offset),  # right
+                (w_step, h_offset),  # middle
+            ]
+        else:
+            h_step = (img_h - crop_h) // 2
+            w_offset = (img_w - crop_w) // 2
+            offsets = [
+                (w_offset, 0),  # top
+                (w_offset, 2 * h_step),  # down
+                (w_offset, h_step),  # middle
+            ]
+
+        cropped = []
+        crop_bboxes = []
+        for x_offset, y_offset in offsets:
+            bbox = [x_offset, y_offset, x_offset + crop_w, y_offset + crop_h]
+            crop = [
+                img[y_offset:y_offset + crop_h, x_offset:x_offset + crop_w]
+                for img in imgs
+            ]
+            cropped.extend(crop)
+            crop_bboxes.extend([bbox for _ in range(len(imgs))])
+
+        crop_bboxes = np.array(crop_bboxes)
+        results['imgs'] = cropped
+        results['crop_bbox'] = crop_bboxes
+        results['img_shape'] = results['imgs'][0].shape[:2]
+        if 'prog_label' in results:
+            results['prog_label'] = np.repeat(results['prog_label'], 3)
+
+        return results
+
+    def __repr__(self):
+        repr_str = f'{self.__class__.__name__}(crop_size={self.crop_size})'
+        return repr_str
