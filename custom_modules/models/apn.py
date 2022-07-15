@@ -86,7 +86,7 @@ class APN(nn.Module):
         print(progression.shape)
         if num_segs > 1:
             cls_score = cls_score.view(batch_size, num_segs, -1).mean(dim=1)
-            progression = progression.view(batch_size, num_segs, -1).mean(dim=1)
+            progression = progression.view(batch_size, num_segs).mean(dim=1)
             print(progression.shape)
         return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 
