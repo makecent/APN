@@ -81,6 +81,7 @@ class APN(nn.Module):
         cls_score, reg_score = self._forward(imgs)
         if num_segs > 1:
             cls_score = cls_score.view(batch_size, num_segs, -1).mean(dim=1)
+            reg_score = reg_score.view(batch_size, num_segs, -1).mean(dim=1)
 
         cls_score = cls_score.softmax(-1)
         reg_score = reg_score.sigmoid()
