@@ -116,3 +116,4 @@ output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
 eval_config = dict(metric_options=dict(metrics='mAP', mAP=dict(search=dict(min_L=60))))
+gpu_ids = (0, 1)
