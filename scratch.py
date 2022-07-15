@@ -9,10 +9,10 @@ inputs = torch.randn(1, 1, 3, 16, 224, 224).cuda()
 #     "configs/apn_r3dsony_8x32_10e_aty13_video.py").model.backbone).cuda()
 
 model = build_model(Config.fromfile(
-    "configs/apn_mvit_16x8_10e_aty13_video.py").model).cuda()
+    "configs/apn_slowonly_unregl_16x8_10e_thumos14_flow.py").model).cuda()
 
 # flops = FlopCountAnalysis(model.backbone, inputs)
-# print(flop_count_table(flops, max_depth=10))
+# # print(flop_count_table(flops, max_depth=10))
 # params = parameter_count(model.backbone)
 #
 # print(f"GFLOPS:\t{flops.total()/1e9:.2f} G")
@@ -25,15 +25,3 @@ for i in track_iter_progress(list(range(10000))):
 
     with torch.no_grad():
         out = model(inputs, return_loss=False)
-
-
-from mmaction.datasets.pipelines import RawFrameDecode
-import numpy as np
-f = RawFrameDecode()
-results = dict(frame_dir='/home/louis/PycharmProjects/APN/my_data/thumos14/rawframes/test/video_test_0000004',
-               frame_inds=np.arange(100),
-               filename_tmpl='flow_{}_{:05}.jpg',
-               modality='Flow',
-               start_index=0)
-t = f(results)
-tt = np.array(t['imgs'])
