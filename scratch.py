@@ -20,8 +20,8 @@ model = build_model(Config.fromfile(
 
 from mmcv import track_iter_progress
 for i in track_iter_progress(list(range(10000))):
-    # loss = model(inputs, class_label=torch.randint(20, (1, 1)).cuda(), return_loss=True)
-    # loss['loss_cls'].backward()
+    loss = model(inputs, class_label=torch.randint(20, (1, 1)).cuda(), return_loss=True)
+    loss['loss_cls'].backward()
 
-    with torch.no_grad():
-        out = model(inputs, return_loss=False)
+    # with torch.no_grad():
+    #     out = model(inputs, return_loss=False)

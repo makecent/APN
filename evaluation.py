@@ -21,12 +21,12 @@ def parse_args():
     return args
 
 
-def evaluate_results(cfg_file="configs/apn_r3dsony_bg0.5_32x4_10e_thumos14_flow.py",
+def evaluate_results(cfg_file="configs/apn_r3dsony_32x4_10e_thumos14_rgb.py",
                      results_file=''):
     # Init
     run_name = cfg_file.split('/')[-1].rsplit('.', 1)[0]
     if results_file == '':
-        results_file = f"work_dirs/{run_name}/results.pkl"
+        results_file = f"work_dirs/{run_name}/progressions.pkl"
     if '.pkl' in results_file:
         with open(results_file, 'rb') as f:
             results = pickle.load(f)
