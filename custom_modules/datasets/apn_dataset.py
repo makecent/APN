@@ -297,6 +297,7 @@ class APNDataset(Dataset):
                                               list(zip(video_names, results, rescale, repeat(kwargs))),
                                               nproc,
                                               keep_order=True)
+        # TODO: improve by making each video only can detect no more than 5 classes of actions?
         det_results = [bbox2result(det_bboxes, det_labels, len(self.gt_infos)) for det_bboxes, det_labels in
                        det_results]
 
