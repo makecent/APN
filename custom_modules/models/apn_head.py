@@ -45,10 +45,6 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.norm_reg = nn.LayerNorm(in_channels, eps=1e-06)
 
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
-        if self.dropout_ratio > 0:
-            self.dropout = nn.Dropout(p=self.dropout_ratio)
-        else:
-            self.dropout = nn.Identity()
 
         # self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
         self.cls_hid = nn.Linear(self.in_channels, self.hid_channels)
@@ -68,13 +64,13 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.avg_pool(x)
         x = x.view(x.shape[0], -1)
 
-        # x = self.dropout(x)
+        # x = F.dropout(x, p=self.dropout_ratio)
         # cls_score = self.cls_fc(x)
         # reg_score = self.coral_fc(x) + self.coral_bias
 
-        cls_x = F.gelu(self.cls_hid(self.norm_cls(x)))
-        cls_score = self.dropout(self.cls_fc(cls_x))
+        cls_x = F.dropout(F.gelu(self.cls_hid(self.norm_cls(x))), p=self.dropout_ratio)
+        cls_score = self.cls_fc(cls_x)
 
-        reg_x = F.gelu(self.reg_hid(self.norm_reg(x)))
-        reg_score = self.dropout(self.coral_fc(reg_x)) + self.coral_bias
+        reg_x = F.dropout(F.gelu(self.reg_hid(self.norm_reg(x))), p=self.dropout_ratio)
+        reg_score = self.coral_fc(reg_x) + self.coral_bias
         return cls_score, reg_score
