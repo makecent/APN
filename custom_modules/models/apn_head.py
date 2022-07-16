@@ -2,10 +2,10 @@ from abc import ABCMeta
 
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 
 from mmcv.cnn import kaiming_init, normal_init, constant_init
 from mmaction.models.builder import HEADS, build_loss
-
 
 @HEADS.register_module()
 class APNHead(nn.Module, metaclass=ABCMeta):
@@ -41,15 +41,20 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
 
+        self.norm_cls = nn.LayerNorm(in_channels, eps=1e-06)
+        self.norm_reg = nn.LayerNorm(in_channels, eps=1e-06)
+
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
         if self.dropout_ratio > 0:
             self.dropout = nn.Dropout(p=self.dropout_ratio)
         else:
             self.dropout = nn.Identity()
 
-        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
+        self.cls_hid = nn.Linear(self.in_channels, self.hid_channels)
+        self.cls_fc = nn.Linear(self.hid_channels, self.num_classes)
 
-        self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
+        self.reg_hid = nn.Linear(self.in_channels, self.hid_channels)
+        self.coral_fc = nn.Linear(self.hid_channels, 1, bias=False)
         self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
 
     def init_weights(self):
@@ -61,6 +66,10 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.avg_pool(x)
         x = x.view(x.shape[0], -1)
         x = self.dropout(x)
-        cls_score = self.cls_fc(x)
-        reg_score = self.coral_fc(x) + self.coral_bias
+
+        cls_x = F.gelu(self.cls_hid(self.norm_cls(x)))
+        cls_score = self.dropout(self.cls_fc(cls_x))
+
+        reg_x = F.gelu(self.reg_hid(self.norm_reg(x)))
+        reg_score = self.dropout(self.coral_fc(reg_x)) + self.coral_bias
         return cls_score, reg_score

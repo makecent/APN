@@ -19,7 +19,6 @@ class MViTB(torch.nn.Module):
             conv_flow.bias = model.patch_embed.patch_model.bias
             self.model.patch_embed.patch_model = conv_flow
 
-
     def forward(self, x):
         x = self.model(x)
         return x[:, 0, :]
