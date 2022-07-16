@@ -82,10 +82,10 @@ class APN(nn.Module):
 
         cls_score = cls_score.softmax(-1)
         reg_score = reg_score.sigmoid()
-        progression = decode_progression(reg_score)
         if num_segs > 1:
             cls_score = cls_score.view(batch_size, num_segs, -1).mean(dim=1)
-            progression = progression.view(batch_size, num_segs).mean(dim=1)
+            reg_score = reg_score.view(batch_size, num_segs, -1).mean(dim=1)
+        progression = decode_progression(reg_score)
         return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 
     def forward(self, *args, return_loss=True, **kwargs):
