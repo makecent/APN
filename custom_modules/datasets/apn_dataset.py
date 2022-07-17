@@ -175,7 +175,7 @@ class APNDataset(Dataset):
                          nms=dict(
                              score_thr=0,
                              max_per_video=-1,
-                             nms=dict(iou_thr=0.5)))),
+                             nms=dict(iou_thr=0.4)))),
                  logger=None):
         if not isinstance(results, list):
             raise TypeError(f'results must be a list, but got {type(results)}')
