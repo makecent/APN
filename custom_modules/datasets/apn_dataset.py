@@ -168,8 +168,8 @@ class APNDataset(Dataset):
                      mAP=dict(
                          iou_thr=0.5,
                          search=dict(
-                             min_e=60,
-                             max_s=40,
+                             min_e=70,
+                             max_s=30,
                              min_L=60,
                              method='mse'),
                          nms=dict(
