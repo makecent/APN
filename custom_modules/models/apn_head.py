@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from mmcv.cnn import kaiming_init, normal_init, constant_init
+from mmcv.cnn import kaiming_init
 from mmaction.models.builder import HEADS, build_loss
 
 @HEADS.register_module()
@@ -57,11 +57,15 @@ class APNHead(nn.Module, metaclass=ABCMeta):
     def init_weights(self):
         kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
         kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
-        constant_init(self.coral_bias, 0)
+        nn.init.constant_(self.coral_bias, 0)
+        nn.init.trunc_normal_(self.reg_token, std=0.02)
 
     def forward(self, x):
         x = self.avg_pool(x)
         # x = x.view(x.shape[0], -1)
+        # x = F.dropout(x)
+        # cls_score = self.cls_fc(x)
+        # reg_score = self.coral_fc(x) + self.coral_bias
 
         cls_x, _ = self.cls_attention1(query=x[:, :1, :], key=x, value=x, need_weights=False)
         cls_x, _ = self.cls_attention2(query=cls_x[:, :1, :], key=cls_x, value=cls_x, need_weights=False)
