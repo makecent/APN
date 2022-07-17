@@ -219,7 +219,7 @@ class APNDataset(Dataset):
                     log_msg.append(f'\ntop{k}_acc\t{acc:.4f}')
                 log_msg = ''.join(log_msg)
                 print_log(log_msg, logger=logger)
-                del cls_score, cls_label
+                del cls_score, cls_label, sampled_idx_pre, _
                 continue
 
             if metric == 'MAE':
@@ -235,7 +235,7 @@ class APNDataset(Dataset):
                 eval_results['MAE'] = MAE
                 log_msg = f'\nMAE\t{MAE:.2f}'
                 print_log(log_msg, logger=logger)
-                del progression
+                del progression, gt_progression, sampled_idx_pre, _
                 continue
 
             if metric == 'mAP':
@@ -293,6 +293,7 @@ class APNDataset(Dataset):
     def apn_action_detection(self, results, nproc=cpu_count(), **kwargs):
         rescale = [video_info['rescale'] for video_info in self.video_infos.values()]
         video_names = list(self.video_infos.keys())  # For debug purpose
+        print(len(results), len(results[0]), results[0][0].shape, results[0][0].dtype, type(results[0][1]))
         det_results = track_parallel_progress(apn_detection_on_single_video,
                                               list(zip(video_names, results, rescale, repeat(kwargs))),
                                               nproc,

@@ -1,13 +1,6 @@
 import argparse
-import numpy as np
-import json
-import time
-import pickle
-from mmcv import Config
+from mmcv import Config, load
 from mmaction.datasets import build_dataset
-import warnings
-import os
-import sys
 
 
 def parse_args():
@@ -18,30 +11,19 @@ def parse_args():
     return args
 
 
-def evaluate_results(cfg_file="configs/apn_r3dsony_32x4_10e_thumos14_rgb.py",
-                     results_file=''):
+def evaluate_results(cfg_file="configs/apn_mvit_16x8_10e_thumos14_rgb.py",
+                     results_file='results.pkl'):
     # Init
     run_name = cfg_file.split('/')[-1].rsplit('.', 1)[0]
     if results_file == '':
         results_file = f"work_dirs/{run_name}/progressions.pkl"
-    if '.pkl' in results_file:
-        with open(results_file, 'rb') as f:
-            results = pickle.load(f)
-    else:
-        with open(results_file, 'r') as f:
-            results = json.load(f)
-    before = time.time()
-    eval_results = {}
+    results = load(results_file)
     cfg = Config.fromfile(cfg_file)
     ds = build_dataset(cfg.data.test)
 
     # Compute mAP
     # metric_options = cfg.eval_config.metric_options
-    aps = ds.evaluate(results, metrics=['MAE', 'top_k_accuracy', 'mAP'])
-    eval_results.update(aps)
-    print(f"AP50:                     {eval_results['AP50']}")
-    execution_time = time.time() - before
-    print(f"Execution Time:              {execution_time:.2f} seconds")
+    aps = ds.evaluate(results, metrics=['mAP'])
 
 
 if __name__ == '__main__':
