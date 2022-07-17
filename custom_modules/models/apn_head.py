@@ -64,7 +64,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         # x = x.view(x.shape[0], -1)
 
         cls_x = self.cls_attention1(query=x[:, :1, :], key=x, value=x, need_weights=False)
-        print(len(cls_x))
+        print(cls_x[0].shape, cls_x[1].shape)
         cls_x = self.cls_attention2(query=cls_x[:, :1, :], key=cls_x, value=cls_x, need_weights=False)
         cls_token = cls_x[:, 0, :]
 
