@@ -63,6 +63,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.avg_pool(x)
         # x = x.view(x.shape[0], -1)
 
+        print(x.shape, x[:, 0, :].shape)
         cls_x = self.cls_attention1(query=x[:, 0, :], key=x, value=x)
         cls_x = self.cls_attention2(query=cls_x[:, 0, :], key=cls_x, value=cls_x)
         cls_token = cls_x[:, 0, :].squeeze(dim=1)
