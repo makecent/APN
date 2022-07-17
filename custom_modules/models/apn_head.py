@@ -67,7 +67,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         cls_x, _ = self.cls_attention2(query=cls_x[:, :1, :], key=cls_x, value=cls_x, need_weights=False)
         cls_token = cls_x[:, 0, :]
 
-        reg_x = torch.cat((self.reg_token.expand(x.shape[0], -1, -1), x[:, 1:, :]))
+        reg_x = torch.cat((self.reg_token.expand(x.shape[0], -1, -1), x[:, 1:, :]), dim=1)
         reg_x, _ = self.reg_attention1(query=reg_x[:, :1, :], key=reg_x, value=reg_x, need_weights=False)
         reg_x, _ = self.reg_attention2(query=reg_x[:, :1, :], key=reg_x, value=reg_x, need_weights=False)
         reg_token = reg_x[:, 0, :]
