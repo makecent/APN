@@ -168,14 +168,14 @@ class APNDataset(Dataset):
                      mAP=dict(
                          iou_thr=0.5,
                          search=dict(
-                             min_e=70,
-                             max_s=30,
+                             min_e=60,
+                             max_s=40,
                              min_L=60,
                              method='mse'),
                          nms=dict(
                              score_thr=0,
                              max_per_video=-1,
-                             nms=dict(iou_thr=0.4)))),
+                             nms=dict(iou_thr=0.5)))),
                  logger=None):
         if not isinstance(results, list):
             raise TypeError(f'results must be a list, but got {type(results)}')

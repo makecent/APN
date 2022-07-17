@@ -13,10 +13,7 @@ import sys
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluation on predicted action progressions")
     parser.add_argument('--config', default='', help="path to the test config .py file")
-    parser.add_argument('--result',
-                        default='',
-                        help="path to the predicted progressions .pkl file. If not specified, "
-                             "then will try to find 'progressions.pkl' in work_dir defined in the config")
+    parser.add_argument('--result', default='', help="path to the predicted progressions .pkl file.")
     args = parser.parse_args()
     return args
 
