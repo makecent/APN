@@ -99,7 +99,6 @@ def score_progression_proposal(proposal, method='mse', backend='numpy'):
 
 def apn_detection_on_single_video(results):
     video_name, results, rescale_rate, kwargs = results
-    print(video_name, rescale_rate, kwargs)
     search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
