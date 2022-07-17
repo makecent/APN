@@ -63,13 +63,13 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.avg_pool(x)
         # x = x.view(x.shape[0], -1)
 
-        cls_x = self.cls_attention1(query=x[:, :1, :], key=x, value=x)
-        cls_x = self.cls_attention2(query=cls_x[:, :1, :], key=cls_x, value=cls_x)
+        cls_x = self.cls_attention1(query=x[:, :1, :], key=x, value=x, need_weights=False)
+        cls_x = self.cls_attention2(query=cls_x[:, :1, :], key=cls_x, value=cls_x, need_weights=False)
         cls_token = cls_x[:, 0, :]
 
         reg_x = torch.cat((self.reg_token.expand(x.shape[0], -1, -1), x[:, 1:, :]))
-        reg_x = self.reg_attention1(query=reg_x[:, :1, :], key=reg_x, value=reg_x)
-        reg_x = self.reg_attention2(query=reg_x[:, :1, :], key=reg_x, value=reg_x)
+        reg_x = self.reg_attention1(query=reg_x[:, :1, :], key=reg_x, value=reg_x, need_weights=False)
+        reg_x = self.reg_attention2(query=reg_x[:, :1, :], key=reg_x, value=reg_x, need_weights=False)
         reg_token = reg_x[:, 0, :]
 
         cls_token = F.dropout(cls_token, p=self.dropout_ratio)
