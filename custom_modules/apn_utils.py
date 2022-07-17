@@ -99,7 +99,7 @@ def score_progression_proposal(proposal, method='mse', backend='numpy'):
 
 def apn_detection_on_single_video(results):
     video_name, results, rescale_rate, kwargs = results
-    print(f'\n{video_name} under processing ...')
+    print(video_name, rescale_rate, kwargs)
     search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
@@ -121,7 +121,6 @@ def apn_detection_on_single_video(results):
         nms_kwargs.get('score_thr', 0.),
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
         nms_kwargs.get('max_per_video', -1))
-    print(f'\n{video_name} completed')
     return det_bbox, det_label
 
 
