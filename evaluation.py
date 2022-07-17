@@ -36,10 +36,8 @@ def evaluate_results(cfg_file="configs/apn_r3dsony_32x4_10e_thumos14_rgb.py",
     ds = build_dataset(cfg.data.test)
 
     # Compute mAP
-    metric_options = cfg.eval_config.metric_options
-    aps = ds.evaluate(results,
-                      metrics=['MAE', 'top_k_accuracy', 'mAP'],
-                      metric_options=metric_options)
+    # metric_options = cfg.eval_config.metric_options
+    aps = ds.evaluate(results, metrics=['MAE', 'top_k_accuracy', 'mAP'])
     eval_results.update(aps)
     print(f"AP50:                     {eval_results['AP50']}")
     execution_time = time.time() - before
