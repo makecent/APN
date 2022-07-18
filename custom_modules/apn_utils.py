@@ -8,12 +8,12 @@ from matplotlib import pyplot as plt
 def decode_progression(reg_score):
     batch_size, num_stage = reg_score.shape
     if isinstance(reg_score, torch.Tensor):
-        progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
-        # x1 = torch.cat([torch.ones((batch_size, 1), device=reg_score.device), reg_score], dim=-1)
-        # x2 = torch.cat([reg_score, torch.zeros((batch_size, 1), device=reg_score.device)], dim=-1)
-        # p = (x1 - x2).clamp(0)
-        # v = torch.arange(num_stage+1, device=reg_score.device).repeat((batch_size, 1))
-        # progression = (p * v).sum(dim=-1)
+        # progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
+        x1 = torch.cat([torch.ones((batch_size, 1), device=reg_score.device), reg_score], dim=-1)
+        x2 = torch.cat([reg_score, torch.zeros((batch_size, 1), device=reg_score.device)], dim=-1)
+        p = (x1 - x2).clamp(0)
+        v = torch.arange(num_stage+1, device=reg_score.device).repeat((batch_size, 1))
+        progression = (p * v).sum(dim=-1)
     elif isinstance(reg_score, np.ndarray):
         progression = np.count_nonzero(reg_score > 0.5, axis=-1)
     else:

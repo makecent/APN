@@ -111,7 +111,6 @@ optimizer = dict(type='AdamW',
                  paramwise_cfg=dict(
                      custom_keys={
                          '.backbone.model.cls_positional_encoding.cls_token': dict(decay_mult=0.0),
-                         '.head.cls_head.reg_token': dict(decay_mult=0.0),
                          '.backbone.model.cls_positional_encoding.pos_embed_spatial': dict(decay_mult=0.0),
                          '.backbone.model.cls_positional_encoding.pos_embed_temporal': dict(decay_mult=0.0),
                          '.backbone.model.cls_positional_encoding.pos_embed_class': dict(decay_mult=0.0)}),
