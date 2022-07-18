@@ -4,10 +4,11 @@ from mmaction.models.builder import BACKBONES
 
 
 @BACKBONES.register_module()
-class MViTB(torch.nn.Module):
-    def __init__(self, pretrained=True, flow_input=False):
+class MViT(torch.nn.Module):
+    def __init__(self, model_type="mvit_base_16x4", pretrained=True, flow_input=False):
         super().__init__()
-        model = torch.hub.load("facebookresearch/pytorchvideo", model="mvit_base_16x4", pretrained=pretrained)
+        assert model_type in ('mvit_base_16', 'mvit_base_16x4', 'mvit_base_32x3')
+        model = torch.hub.load("facebookresearch/pytorchvideo", model=model_type, pretrained=pretrained)
         model.head = None
         self.model = model
         if flow_input:
@@ -24,6 +25,5 @@ class MViTB(torch.nn.Module):
         return x[:, 0, :]
 
     def init_weights(self):
-        """Initiate the parameters either from existing checkpoint or from
-        scratch."""
+        """The model are already initialized in the __init__ function"""
         pass

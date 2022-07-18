@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='APN',
-    backbone=dict(type='MViTB'),
+    backbone=dict(type='MViT'),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
