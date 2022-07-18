@@ -32,6 +32,7 @@ class APN(nn.Module):
         self.backbone.init_weights()
         self.cls_head.init_weights()
 
+    @auto_fp16()
     def _forward(self, imgs):
         # [N, 1, C, T, H, W] -> [N, C, T, H, W]
         imgs = imgs.reshape((-1,) + imgs.shape[2:])
@@ -41,7 +42,6 @@ class APN(nn.Module):
 
         return output
 
-    @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
         hard_class_label = class_label
 
@@ -82,10 +82,10 @@ class APN(nn.Module):
 
         cls_score = cls_score.softmax(-1)
         reg_score = reg_score.sigmoid()
+        progression = decode_progression(reg_score)
         if num_segs > 1:
             cls_score = cls_score.view(batch_size, num_segs, -1).mean(dim=1)
-            reg_score = reg_score.view(batch_size, num_segs, -1).mean(dim=1)
-        progression = decode_progression(reg_score)
+            progression = progression.view(batch_size, num_segs).mean(dim=1)
         return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 
     def forward(self, *args, return_loss=True, **kwargs):
