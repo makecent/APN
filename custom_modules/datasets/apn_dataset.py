@@ -293,7 +293,6 @@ class APNDataset(Dataset):
     def apn_action_detection(self, results, nproc=cpu_count(), **kwargs):
         rescale = [video_info['rescale'] for video_info in self.video_infos.values()]
         video_names = list(self.video_infos.keys())  # For debug purpose
-        print(nproc)
         det_results = track_parallel_progress(apn_detection_on_single_video,
                                               list(zip(video_names, results, rescale, repeat(kwargs))),
                                               nproc,

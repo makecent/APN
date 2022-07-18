@@ -1,9 +1,4 @@
+from custom_modules.models.backbones import MViT2
 
-from custom_modules.datasets.random_erasing import RandomErasing
-import torch
-
-pp = RandomErasing()
-results = dict()
-results['imgs'] = torch.ones(3, 8, 224, 224)
-t = pp(results)
+t = MViT2()
 print('haha')
