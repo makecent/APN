@@ -32,7 +32,7 @@ class MViT2(torch.nn.Module):
     def forward(self, x):
         x = x.unsqueeze(0)
         x = self.model(x)
-        return x[:, 0, :]
+        return x
 
     def init_weights(self):
         """Initiate the parameters either from existing checkpoint or from
