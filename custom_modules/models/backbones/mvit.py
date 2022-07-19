@@ -22,6 +22,7 @@ class MViT(torch.nn.Module):
 
     def forward(self, x):
         x = self.model(x)
+        print(x.shape)
         return x[:, 0, :]
 
     def init_weights(self):
