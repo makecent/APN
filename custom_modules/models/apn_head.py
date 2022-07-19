@@ -42,6 +42,10 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.dropout_ratio = dropout_ratio
 
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
+        if self.dropout_ratio > 0:
+            self.dropout = nn.Dropout(p=self.dropout_ratio)
+        else:
+            self.dropout = nn.Identity()
 
         self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
 
@@ -56,7 +60,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
     def forward(self, x):
         x = self.avg_pool(x)
         x = x.view(x.shape[0], -1)
-        x = F.dropout(x, p=self.dropout_ratio)
+        x = self.dropout(x)
         cls_score = self.cls_fc(x)
         reg_score = self.coral_fc(x) + self.coral_bias
         return cls_score, reg_score
