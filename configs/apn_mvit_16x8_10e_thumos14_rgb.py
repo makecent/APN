@@ -63,7 +63,7 @@ val_pipeline = [
 test_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='Resize', scale=(-1, 256)),
+    dict(type='Resize', scale=(-1, 224)),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
