@@ -32,7 +32,7 @@ class APN(nn.Module):
         self.backbone.init_weights()
         self.cls_head.init_weights()
 
-
+    @auto_fp16()
     def _forward(self, imgs):
         # [N, 1, C, T, H, W] -> [N, C, T, H, W]
         imgs = imgs.reshape((-1,) + imgs.shape[2:])
@@ -42,7 +42,7 @@ class APN(nn.Module):
 
         return output
 
-    @auto_fp16()
+
     def forward_train(self, imgs, progression_label=None, class_label=None):
         hard_class_label = class_label
 
