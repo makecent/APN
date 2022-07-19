@@ -29,6 +29,7 @@ class MViT2(torch.nn.Module):
             self.model.patch_embed.patch_model = conv_flow
 
     def forward(self, x):
+        x = x.unsqueeze(0)
         x = self.model(x)
         return x[:, 0, :]
 
