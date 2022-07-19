@@ -16,7 +16,7 @@ class MViT2(torch.nn.Module):
         super().__init__()
         model = MODEL_REGISTRY.get(name)(cfg)
         if pretrained:
-            state_dict = _load_checkpoint("https://dl.fbaipublicfiles.com/pyslowfast/model_zoo/mvitv2/pysf_video_models/MViTv2_B_32x3_k400_f304025456.pyth")
+            state_dict = _load_checkpoint("https://dl.fbaipublicfiles.com/pyslowfast/model_zoo/mvitv2/pysf_video_models/MViTv2_B_32x3_k400_f304025456.pyth", map_location=lambda storage, loc: storage)
             load_state_dict(model, state_dict['model_state'])
         model.head = nn.Identity()
         self.model = model
