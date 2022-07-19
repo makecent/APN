@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 
 from mmaction.models.builder import BACKBONES
 from custom_modules.models.backbones.slowfast.models import MODEL_REGISTRY
@@ -17,7 +18,7 @@ class MViT2(torch.nn.Module):
         if pretrained:
             state_dict = _load_checkpoint("https://dl.fbaipublicfiles.com/pyslowfast/model_zoo/mvitv2/pysf_video_models/MViTv2_B_32x3_k400_f304025456.pyth")
             load_state_dict(model, state_dict['model_state'])
-        model.head = None
+        model.head = nn.Identity()
         self.model = model
         if flow_input:
             w = model.patch_embed.patch_model.weight
