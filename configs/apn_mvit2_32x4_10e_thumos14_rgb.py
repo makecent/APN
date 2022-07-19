@@ -12,9 +12,8 @@ model = dict(
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
-    # blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
-    #                                                       dict(type='CutmixBlendingProg', num_classes=20, alpha=1.))),
-    blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),)),
+    blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
+                                                          dict(type='CutmixBlendingProg', num_classes=20, alpha=1.))),
 )
 
 # input configuration
@@ -107,7 +106,7 @@ evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rul
 
 # optimizer
 optimizer = dict(type='AdamW',
-                 lr=0.2e-3,   # 1.6e-3 is for batch-size=512
+                 lr=1e-4,   # 1.6e-3 is for batch-size=512
                  weight_decay=0.05,
                  paramwise_cfg=dict(
                      custom_keys={
