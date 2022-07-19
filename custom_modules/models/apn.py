@@ -79,6 +79,7 @@ class APN(nn.Module):
         """Defines the computation performed at every call when evaluation and testing."""
         batch_size, num_segs = imgs.shape[:2]
         cls_score, reg_score = self._forward(imgs)
+        print(cls_score.dtype)
 
         cls_score = cls_score.softmax(-1)
         reg_score = reg_score.sigmoid()
