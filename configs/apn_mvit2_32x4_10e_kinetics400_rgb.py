@@ -90,7 +90,7 @@ data = dict(
         pipeline=test_pipeline))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
+evaluation = dict(metrics=['top_k_accuracy', 'mean_class_accuracy'])
 
 # optimizer
 optimizer = dict(type='AdamW',
