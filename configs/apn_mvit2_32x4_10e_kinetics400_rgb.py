@@ -21,11 +21,11 @@ clip_len = 32
 frame_interval = 4
 
 # dataset settings
-dataset_type = 'VideoDataset'
+dataset_type = 'VideoDataset_MAE'
 data_root = 'my_data/kinetics400/videos_train'
 data_root_val = 'my_data/kinetics400/videos_val'
 ann_file_train = 'my_data/kinetics400/kinetics400_train_list_videos.txt'
-ann_file_val = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
+ann_file_val = 'my_data/kinetics400/demo_kinetics400_val_list_videos.txt'
 ann_file_test = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
 
 img_norm_cfg = dict(
@@ -50,24 +50,26 @@ train_pipeline = [
 val_pipeline = [
     dict(type='DecordInit'),
     dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval, num_clips=1),
+    dict(type='LabelToOrdinal'),
     dict(type='DecordDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs'], meta_keys=[]),
-    dict(type='ToTensor', keys=['imgs'])
+    dict(type='Collect', keys=['imgs', 'progression_label'], meta_keys=[]),
+    dict(type='ToTensor', keys=['imgs', 'progression_label'])
 ]
 test_pipeline = [
     dict(type='DecordInit'),
     dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval, num_clips=10, test_mode=True),
+    dict(type='LabelToOrdinal'),
     dict(type='DecordDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs'], meta_keys=[]),
-    dict(type='ToTensor', keys=['imgs']),
+    dict(type='Collect', keys=['imgs', 'progression_label'], meta_keys=[]),
+    dict(type='ToTensor', keys=['imgs', 'progression_label']),
 ]
 data = dict(
     videos_per_gpu=2,
