@@ -74,22 +74,19 @@ data = dict(
     test_dataloader=dict(videos_per_gpu=1),
     train=dict(
         type=dataset_type,
-        ann_files=ann_file_train,
+        ann_file=ann_file_train,
         data_prefix=data_root,
-        pipeline=train_pipeline,
-        modality='Video'),
+        pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file=ann_file_val,
         data_prefix=data_root_val,
-        pipeline=val_pipeline,
-        modality='Video'),
+        pipeline=val_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=ann_file_test,
         data_prefix=data_root_val,
-        pipeline=test_pipeline,
-        modality='Video'))
+        pipeline=test_pipeline))
 
 # validation config
 evaluation = dict(metrics=['top_k_accuracy', 'MAE'], save_best='MAE', rule='less')
