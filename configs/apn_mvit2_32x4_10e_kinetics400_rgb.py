@@ -42,8 +42,8 @@ train_pipeline = [
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs', 'progression_label', 'class_label']),
+    dict(type='Collect', keys=['imgs', 'label', 'progression_label'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs', 'label', 'progression_label']),
     dict(type='RandomErasing')
 ]
 val_pipeline = [
