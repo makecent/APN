@@ -87,8 +87,7 @@ class APN(nn.Module):
             reg_score = reg_score.view(batch_size, num_segs, -1).mean(dim=1)
         progression = decode_progression(reg_score)
         if raw_progression is not None:
-            print(progression.shape, raw_progression.shape)
-            prog_mae = torch.abs(progression - raw_progression)
+            prog_mae = torch.abs(progression - raw_progression.squeeze(1))
             return list(zip(cls_score.detach().cpu().numpy(), prog_mae.detach().cpu().numpy()))
         else:
             return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
