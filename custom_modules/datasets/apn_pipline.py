@@ -74,6 +74,7 @@ class FetchGlobalFrames:
         results['num_clips'] = 1
         return results
 
+
 @PIPELINES.register_module()
 class LabelToOrdinal(object):
 
@@ -82,7 +83,8 @@ class LabelToOrdinal(object):
 
     @staticmethod
     def _get_prog(results):
-        clip_center = results['frame_inds'].reshape([results['num_clips'], results['clip_len']]).mean(axis=-1)
+        assert results['num_clips'] == 1, "progression label should only used in training"
+        clip_center = results['frame_inds'].mean()
         prog = np.clip(clip_center / results['total_frames'], a_min=0, a_max=1)
         return prog
 
