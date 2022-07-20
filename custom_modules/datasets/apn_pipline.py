@@ -80,10 +80,18 @@ class LabelToOrdinal(object):
     def __init__(self, num_stages=100):
         self.num_stages = num_stages
 
+    @staticmethod
+    def _get_prog(results):
+        clip_center = results['frame_inds'].reshape([results['num_clips'], results['clip_len']]).mean(axis=-1)
+        prog = np.clip(clip_center / results['total_frames'], a_min=0, a_max=1)
+        return prog
+
     def __call__(self, results):
         """Convert progression_label to ordinal label. e.g., 0.031 => [1, 1, 1, 0, ...]."""
         ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype='float32')
-        denormalized_prog = round(results['progression_label'] * self.num_stages)
+        prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
+
+        denormalized_prog = round(prog * self.num_stages)
         ordinal_label[:denormalized_prog] = 1.0
         results['progression_label'] = ordinal_label
         return results
