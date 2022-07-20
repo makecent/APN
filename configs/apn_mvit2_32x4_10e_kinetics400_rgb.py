@@ -8,7 +8,7 @@ model = dict(
     backbone=dict(type='MViT2'),
     cls_head=dict(
         type='APNHead',
-        num_classes=20,
+        num_classes=400,
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
