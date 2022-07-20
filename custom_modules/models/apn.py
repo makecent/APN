@@ -75,7 +75,7 @@ class APN(nn.Module):
 
         return losses
 
-    def forward_test(self, imgs, progression_label=None):
+    def forward_test(self, imgs, raw_progression=None):
         """Defines the computation performed at every call when evaluation and testing."""
         batch_size, num_segs = imgs.shape[:2]
         cls_score, reg_score = self._forward(imgs)
@@ -86,8 +86,9 @@ class APN(nn.Module):
             cls_score = cls_score.view(batch_size, num_segs, -1).mean(dim=1)
             reg_score = reg_score.view(batch_size, num_segs, -1).mean(dim=1)
         progression = decode_progression(reg_score)
-        if progression_label is not None:
-            prog_mae = torch.abs(progression - progression_label)
+        if raw_progression is not None:
+            print(progression.shape, raw_progression.shape)
+            prog_mae = torch.abs(progression - raw_progression)
             return list(zip(cls_score.detach().cpu().numpy(), prog_mae.detach().cpu().numpy()))
         else:
             return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))

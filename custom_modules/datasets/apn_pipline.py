@@ -94,6 +94,7 @@ class LabelToOrdinal(object):
         prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
 
         denormalized_prog = round(prog * self.num_stages)
+        results['raw_progression'] = denormalized_prog
         ordinal_label[:denormalized_prog] = 1.0
         results['progression_label'] = ordinal_label
         return results
