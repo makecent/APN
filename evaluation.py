@@ -5,8 +5,8 @@ from mmaction.datasets import build_dataset
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluation on predicted action progressions")
-    parser.add_argument('--config', default='', help="path to the test config .py file")
-    parser.add_argument('--result', default='', help="path to the predicted progressions .pkl file.")
+    parser.add_argument('config', default='', help="path to the test config .py file")
+    parser.add_argument('result', default='', help="path to the predicted progressions .pkl file.")
     parser.add_argument('--metric-options', nargs='+', action=DictAction, default={})
     args = parser.parse_args()
     return args
