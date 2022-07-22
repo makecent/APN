@@ -125,4 +125,4 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
-load_from = "/home/louis/PycharmProjects/APN/checkpoints/mvit2/epoch2.pth"
+load_from = "checkpoints/mvit2/epoch2.pth"
