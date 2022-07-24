@@ -244,6 +244,14 @@ class APNDataset(Dataset):
                 results_vs_video = self.split_results_by_video(results)
                 det_results = self.apn_action_detection(results_vs_video, **metric_options.get('mAP', {}))
 
+                if True:
+                    from mmcv import dump
+                    video_names = [vn.split('/')[-1] for vn in self.video_infos.keys()]
+                    cls_score, progs = zip(*results)
+                    dump({k: v for k, v in zip(video_names, self.split_results_by_video(progs))}, "progression.pkl")
+                    dump({k: v for k, v in zip(video_names, self.split_results_by_video(cls_score))}, "classification.pkl")
+                    dump({k: v for k, v in zip(video_names, det_results)}, "detection.pkl")
+
                 # Computer mAP
                 iou_thr = metric_options.get('mAP', {}).get('iou_thr', 0.5)
                 iou_thrs = [iou_thr] if isinstance(iou_thr, float) else iou_thr
@@ -285,7 +293,7 @@ class APNDataset(Dataset):
     def get_ann_info(self):
         ann_info = []
         for video_info in self.video_infos.values():
-            ann = dict(bboxes=np.array(video_info['gt_bboxes']),
+            ann = dict(bboxes=np.array(video_info['gt_bboxes']) / video_info['rescale'],
                        labels=np.array(video_info['gt_labels']))
             ann_info.append(ann)
         return ann_info

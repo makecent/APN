@@ -102,14 +102,14 @@ def apn_detection_on_single_video(results):
     search_kwargs = kwargs.get('search', {}).copy()
     search_kwargs['min_L'] /= rescale_rate
 
-    cls_score, progression = map(np.array, zip(*results))
+    cls_score_all, progression = map(np.array, zip(*results))
     det_bbox, loc_score = apn_detection_on_vector(progression, **search_kwargs)
 
     if len(det_bbox) == 0:
         return torch.empty([0, 3]), torch.empty([0])
 
-    cls_score = np.array([(cls_score[bbox[0]: bbox[1] + 1]).mean(axis=0) for bbox in det_bbox])
-    det_bbox = det_bbox * rescale_rate
+    cls_score = np.array([(cls_score_all[bbox[0]: bbox[1] + 1]).mean(axis=0) for bbox in det_bbox])
+    # det_bbox = det_bbox * rescale_rate
 
     nms_kwargs = kwargs.get('nms', {})
     det_bbox, cls_score, loc_score = map(torch.from_numpy, (det_bbox, cls_score, loc_score))
@@ -120,6 +120,11 @@ def apn_detection_on_single_video(results):
         nms_kwargs.get('score_thr', 0.),
         nms_kwargs.get('nms', dict(iou_thr=0.4)),
         nms_kwargs.get('max_per_video', -1))
+
+    # top5 = np.argpartition(cls_score_all.mean(axis=0), -5)[-5:]
+    # remain = np.in1d(det_label, top5)
+    # det_bbox = det_bbox[remain]
+    # det_label = det_label[remain]
     return det_bbox, det_label
 
 
@@ -215,32 +220,20 @@ def one_vs_n_iou(one_box, n_boxes, backend='numpy'):
     return jaccard
 
 
-def plot_detection(video_prediction, gt, ads):
+def plot_detection(detection, video_name):
     from matplotlib import pyplot as plt
     import numpy as np
-    plt.figure(figsize=(15, 5))
-    plt.plot(video_prediction, '-')
-    plt.vlines(gt[:, 0], 0, 100, colors='r', linestyles='solid', label='ground truth')
-    plt.vlines(gt[:, 1], 0, 100, colors='r', linestyles='solid', label='ground truth')
-    plt.vlines(ads[:, 0], 0, 100, colors='k', linestyles='dashed', label='ground truth')
-    plt.vlines(ads[:, 1], 0, 100, colors='k', linestyles='dashed', label='ground truth')
-    plt.yticks(np.arange(0, 100, 20.0))
-    plt.xlabel('Frame Index')
-    plt.ylabel('Completeness')
-    plt.grid()
-    plt.show()
+    video_detection = detection[video_name]
+    video_detection = np.vstack(video_detection)
+    plt.bar(video_detection[:, :2].mean(-1), video_detection[:, -1]*100, width=video_detection[:, 1] - video_detection[:, 0], align='center', alpha=0.5)
 
 
-def plot_prediction(video_prediction):
+
+def plot_prediction(prediction, video_name):
     from matplotlib import pyplot as plt
-    import numpy as np
-    plt.figure(figsize=(15, 5))
+    video_prediction = prediction[video_name]
     plt.plot(video_prediction, '-')
-    plt.yticks(np.arange(0, 100, 20.0))
-    plt.xlabel('Frame Index')
-    plt.ylabel('Completeness')
-    plt.grid()
-    plt.show()
+
 
 
 def average_precision_at_temporal_iou(ground_truth,
@@ -332,7 +325,7 @@ def average_precision_at_temporal_iou(ground_truth,
     return (ap, tp) if return_tp else ap
 
 
-def plot_gt(video_name, height):
+def plot_gt(video_name, height=100, test_sampling=1000):
     from matplotlib import pyplot as plt
     from itertools import repeat
     import pandas as pd
@@ -345,11 +338,15 @@ def plot_gt(video_name, height):
     # plt.title(video_name.rsplit('/', 1)[-1])
     # plt.plot(progression)
     # plt.show()
+    if '/' in video_name:
+        video_name = video_name.rsplit('/', 1)[-1]
+    if '.' not in video_name:
+        video_name = video_name + '.mp4'
     gts = pd.read_csv('/home/louis/PycharmProjects/APN/my_data/thumos14/annotations/apn/apn_test.csv', header=None)
     this_gt = gts[gts[0] == video_name]
     endpoints = this_gt.iloc[:, 2:4].values
     video_length = this_gt[1].iloc[0]
-    normalized_endpoints = endpoints/video_length * 1000
+    normalized_endpoints = endpoints/video_length * test_sampling
     normalized_endpoints = np.rint(normalized_endpoints).astype(int)
     start = normalized_endpoints[:, 0]
     end = normalized_endpoints[:, 1]
