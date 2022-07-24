@@ -21,13 +21,13 @@ class MViT2(torch.nn.Module):
         model.head = nn.Identity()
         self.model = model
         if flow_input:
-            w = model.patch_embed.patch_model.weight
+            w = model.patch_embed.proj.weight
             ww = w.mean(dim=1, keepdim=True)
             ww = torch.cat([ww, ww], dim=1)
             conv_flow = torch.nn.Conv3d(96, 2, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
             conv_flow.weight = torch.nn.Parameter(ww, requires_grad=True)
-            conv_flow.bias = model.patch_embed.patch_model.bias
-            self.model.patch_embed.patch_model = conv_flow
+            conv_flow.bias = model.patch_embed.proj.bias
+            self.model.patch_embed.proj = conv_flow
 
     def forward(self, x):
         x = x.unsqueeze(0)

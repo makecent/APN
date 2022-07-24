@@ -52,7 +52,7 @@ model = dict(
             layer=['Conv2d', 'ConvTranspose2d'],
             mode='fan_in',
             bias=0)),
-    backbone=dict(type='MViT', flow_input=True),
+    backbone=dict(type='MViT2', flow_input=True),
     cls_head=dict(
         type='APNHead',
         num_classes=400,
@@ -77,7 +77,7 @@ ann_file_val = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
 ann_file_test = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
 
 img_norm_cfg = dict(
-    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_bgr=False)
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 
 train_pipeline = [
     dict(type='DecordInit'),
