@@ -121,7 +121,7 @@ test_pipeline = [
     dict(type='ToTensor', keys=['imgs', 'raw_progression']),
 ]
 data = dict(
-    videos_per_gpu=2,
+    videos_per_gpu=1,
     workers_per_gpu=6,
     test_dataloader=dict(videos_per_gpu=1),
     train=dict(
