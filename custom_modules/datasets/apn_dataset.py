@@ -244,7 +244,7 @@ class APNDataset(Dataset):
                 results_vs_video = self.split_results_by_video(results)
                 det_results = self.apn_action_detection(results_vs_video, **metric_options.get('mAP', {}))
 
-                if True:
+                if False:
                     from mmcv import dump
                     video_names = [vn.split('/')[-1] for vn in self.video_infos.keys()]
                     cls_score, progs = zip(*results)
