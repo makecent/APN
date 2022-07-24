@@ -163,4 +163,4 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_iters=1,
                  warmup_by_epoch=True)
 total_epochs = 10
-fp16 = dict()
+# fp16 = dict()
