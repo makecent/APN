@@ -4,8 +4,55 @@ _base_ = [
 
 # model settings
 model = dict(
-    type='APN',
-    backbone=dict(type='MViT2'),
+    type='APN_fly',
+    flow_est=dict(
+        type='PWCNet',
+        encoder=dict(
+            type='PWCNetEncoder',
+            in_channels=3,
+            net_type='Basic',
+            pyramid_levels=[
+                'level1', 'level2', 'level3', 'level4', 'level5', 'level6'
+            ],
+            out_channels=(16, 32, 64, 96, 128, 196),
+            strides=(2, 2, 2, 2, 2, 2),
+            dilations=(1, 1, 1, 1, 1, 1),
+            act_cfg=dict(type='LeakyReLU', negative_slope=0.1)),
+        decoder=dict(
+            type='PWCNetDecoder',
+            in_channels=dict(
+                level6=81, level5=213, level4=181, level3=149, level2=117),
+            flow_div=20.,
+            corr_cfg=dict(type='Correlation', max_displacement=4, padding=0),
+            warp_cfg=dict(type='Warp', align_corners=True, use_mask=True),
+            act_cfg=dict(type='LeakyReLU', negative_slope=0.1),
+            scaled=False,
+            post_processor=dict(type='ContextNet', in_channels=565),
+            flow_loss=dict(
+                type='MultiLevelEPE',
+                p=1,
+                q=0.4,
+                eps=0.01,
+                reduction='sum',
+                resize_flow='upsample',
+                weights={
+                    'level2': 0.005,
+                    'level3': 0.01,
+                    'level4': 0.02,
+                    'level5': 0.08,
+                    'level6': 0.32
+                }),
+        ),
+        # model training and testing settings
+        train_cfg=dict(),
+        test_cfg=dict(),
+        init_cfg=dict(
+            type='Kaiming',
+            nonlinearity='leaky_relu',
+            layer=['Conv2d', 'ConvTranspose2d'],
+            mode='fan_in',
+            bias=0)),
+    backbone=dict(type='MViT', flow_input=True),
     cls_head=dict(
         type='APNHead',
         num_classes=400,
@@ -18,7 +65,7 @@ model = dict(
 )
 
 # input configuration
-clip_len = 32
+clip_len = 33
 frame_interval = 4
 
 # dataset settings
@@ -30,7 +77,7 @@ ann_file_val = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
 ann_file_test = 'my_data/kinetics400/kinetics400_val_list_videos.txt'
 
 img_norm_cfg = dict(
-    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
+    mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_bgr=False)
 
 train_pipeline = [
     dict(type='DecordInit'),
@@ -41,7 +88,7 @@ train_pipeline = [
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
-    # dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
+    dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Rename', mapping=dict(label='class_label')),
