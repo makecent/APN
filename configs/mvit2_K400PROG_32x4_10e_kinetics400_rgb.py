@@ -42,9 +42,8 @@ train_pipeline = [
     dict(type='Flip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Rename', mapping=dict(label='class_label')),
-    dict(type='Collect', keys=['imgs', 'class_label'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs', 'class_label']),
+    dict(type='Collect', keys=['imgs', 'label'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs', 'label']),
     dict(type='RandomErasing')
 ]
 val_pipeline = [
