@@ -4,7 +4,7 @@ _base_ = [
 
 # model settings
 model = dict(
-    type='Recognizer3D',
+    type='APN',
     backbone=dict(type='MViT2'),
     cls_head=dict(
         type='APNHead',
@@ -12,8 +12,9 @@ model = dict(
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
-    blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
-                                                          dict(type='CutmixBlendingProg', num_classes=400, alpha=1.))),
+    train_cfg=dict(type='BatchAugBlending', blending=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
+                                                      dict(type='CutmixBlendingProg', num_classes=400, alpha=1.))
+                   )
 )
 
 # input configuration
