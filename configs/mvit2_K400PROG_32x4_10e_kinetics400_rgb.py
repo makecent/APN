@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='Recognizer3D',
-    backbone=dict(type='MViT2'),
+    backbone=dict(type='MViT2', pretrained=False),
     cls_head=dict(
         type='I3DHead',
         num_classes=400,
@@ -13,7 +13,8 @@ model = dict(
         spatial_type=None),
     train_cfg=dict(
         blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlending', num_classes=400, alpha=.8),
-                                                          dict(type='CutmixBlending', num_classes=400, alpha=1.))))
+                                                          dict(type='CutmixBlending', num_classes=400, alpha=1.)))),
+    test_cfg=dict(average_clips='prob')
 )
 
 # input configuration
