@@ -4,7 +4,7 @@ _base_ = [
 
 # model settings
 model = dict(
-    type='APN',
+    type='Recognizer3D',
     backbone=dict(type='MViT2'),
     cls_head=dict(
         type='APNHead',
