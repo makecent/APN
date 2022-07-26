@@ -8,6 +8,7 @@ from mmaction.core import top_k_accuracy
 from ..apn_utils import binary_accuracy, decode_progression, progression_mae
 from mmcv.runner import auto_fp16
 
+
 @LOCALIZERS.register_module()
 class APN(nn.Module):
     """APN model framework."""

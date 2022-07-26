@@ -195,6 +195,29 @@ class BatchAugBlendingProg:
             repeated_prog_label.append(mixed_prog_label)
         return torch.cat(repeated_imgs), torch.cat(repeated_cls_label), torch.cat(repeated_prog_label)
 
+
+@BLENDINGS.register_module()
+class BatchAugBlending:
+    """Implementing
+        https://openaccess.thecvf.com/content_CVPR_2020/papers/Hoffer_Augment_Your_Batch_Improving_Generalization_Through_Instance_Repetition_CVPR_2020_paper.pdf
+        Only support repeated blending.
+    """
+
+    def __init__(self,
+                 blendings=(dict(type='MixupBlendingProg', num_classes=200, alpha=.8),
+                            dict(type='CutmixBlendingProg', num_classes=200, alpha=1.))):
+        self.blendings = [build_from_cfg(bld, BLENDINGS) for bld in blendings]
+
+    def __call__(self, imgs, class_label):
+        repeated_imgs = []
+        repeated_cls_label = []
+
+        for bld in self.blendings:
+            mixed_imgs, mixed_class_label = bld(imgs, class_label)
+            repeated_imgs.append(mixed_imgs)
+            repeated_cls_label.append(mixed_class_label)
+        return torch.cat(repeated_imgs), torch.cat(repeated_cls_label)
+
 @PIPELINES.register_module(force=True)
 class ThreeCrop(_ThreeCrop):
     """
