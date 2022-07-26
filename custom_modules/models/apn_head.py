@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from mmcv.cnn import kaiming_init
+from mmcv.runner import load_checkpoint
 from mmaction.models.builder import HEADS, build_loss
 
 @HEADS.register_module()
@@ -31,7 +32,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
                  dropout_ratio=0.5,
                  avg3d=True,
-                 reg_head=True):
+                 reg_head=True,
+                 pretrained=None):
         super().__init__()
 
         self.num_classes = num_classes
@@ -43,6 +45,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
             self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
+        self.pretrained = pretrained
 
         self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
         if self.dropout_ratio > 0:
@@ -61,6 +64,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         if self.reg_head:
             kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
             nn.init.constant_(self.coral_bias, 0)
+        if self.pretrained:
+            load_checkpoint(self, self.pretrained)
 
     def forward(self, x):
         x = self.avg_pool(x)

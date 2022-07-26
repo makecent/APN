@@ -1,12 +1,13 @@
 import argparse
 from mmcv import Config, load, DictAction
 from mmaction.datasets import build_dataset
+import os
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluation on predicted action progressions")
-    parser.add_argument('--config', default='', help="path to the test config .py file")
-    parser.add_argument('--result', default='', help="path to the predicted progressions .pkl file.")
+    parser.add_argument('config', default='', help="path to the test config .py file")
+    parser.add_argument('result', default='', help="path to the predicted progressions .pkl file.")
     parser.add_argument('--metric-options', nargs='+', action=DictAction, default={})
     args = parser.parse_args()
     return args
@@ -46,5 +47,8 @@ def evaluate_results(cfg_file="configs/apn_mvit_16x8_10e_thumos14_rgb.py",
 
 
 if __name__ == '__main__':
+    if 'OMP_NUM_THREADS' not in os.environ:
+        os.environ['OMP_NUM_THREADS'] = str(1)
+
     args = parse_args()
     evaluate_results(args.config, args.result, args.metric_options)
