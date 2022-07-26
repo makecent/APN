@@ -220,19 +220,25 @@ def one_vs_n_iou(one_box, n_boxes, backend='numpy'):
     return jaccard
 
 
-def plot_detection(detection, video_name):
+def plot_detection(detection, video_name, fig=None):
     from matplotlib import pyplot as plt
     import numpy as np
     video_detection = detection[video_name]
     video_detection = np.vstack(video_detection)
-    plt.bar(video_detection[:, :2].mean(-1), video_detection[:, -1]*100, width=video_detection[:, 1] - video_detection[:, 0], align='center', alpha=0.5)
+    if fig is not None:
+        fig.bar(video_detection[:, :2].mean(-1), video_detection[:, -1]*100, width=video_detection[:, 1] - video_detection[:, 0], align='center', alpha=0.5)
+    else:
+        plt.bar(video_detection[:, :2].mean(-1), video_detection[:, -1]*100, width=video_detection[:, 1] - video_detection[:, 0], align='center', alpha=0.5)
 
 
 
-def plot_prediction(prediction, video_name):
+def plot_prediction(prediction, video_name, fig=None):
     from matplotlib import pyplot as plt
     video_prediction = prediction[video_name]
-    plt.plot(video_prediction, '-')
+    if fig is not None:
+        fig.plot(video_prediction, '-')
+    else:
+        plt.plot(video_prediction, '-')
 
 
 
@@ -325,7 +331,7 @@ def average_precision_at_temporal_iou(ground_truth,
     return (ap, tp) if return_tp else ap
 
 
-def plot_gt(video_name, height=100, test_sampling=1000):
+def plot_gt(video_name, height=100, test_sampling=1000, fig=None):
     from matplotlib import pyplot as plt
     from itertools import repeat
     import pandas as pd
@@ -350,7 +356,10 @@ def plot_gt(video_name, height=100, test_sampling=1000):
     normalized_endpoints = np.rint(normalized_endpoints).astype(int)
     start = normalized_endpoints[:, 0]
     end = normalized_endpoints[:, 1]
-    plt.bar(normalized_endpoints.mean(-1), height, width=end - start, align='center', alpha=0.5)
+    if fig is not None:
+        fig.bar(normalized_endpoints.mean(-1), height, width=end - start, align='center', alpha=0.5)
+    else:
+        plt.bar(normalized_endpoints.mean(-1), height, width=end - start, align='center', alpha=0.5)
 
 
 from mmaction.models.builder import LOSSES

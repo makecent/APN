@@ -28,11 +28,7 @@ class APN_fly(nn.Module):
         load_checkpoint(self.flow_est, 'checkpoints/mmflow/pwcnet_plus_8x1_750k_sintel_kitti2015_hd1k_320x768.pth', map_location='cpu')
         for p in self.flow_est.parameters():
             p.requires_grad = False
-
-        # Fixing a BUG that PWC flow-estimator cannot take input as 224x224 but only 256x256
-        self.pad = nn.ZeroPad2d(16)
-        self.unpad = CenterCrop(224)
-
+        self.center_crop = CenterCrop(224)
 
         self.backbone = build_backbone(backbone)
         self.cls_head = build_head(cls_head)
@@ -58,11 +54,12 @@ class APN_fly(nn.Module):
     @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
         hard_class_label = class_label
+        imgs = imgs.reshape((-1,) + imgs.shape[2:])
+        imgs = self.estimate_flow(imgs)
+
         if self.blending is not None:
             imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
 
-        imgs = imgs.reshape((-1,) + imgs.shape[2:])
-        imgs = self.estimate_flow(imgs)
         cls_score, reg_score = self._forward(imgs)
 
         class_label = class_label.squeeze(1)
@@ -109,7 +106,6 @@ class APN_fly(nn.Module):
             img1 = imgs[:, :, :-1, :, :]
             img2 = imgs[:, :, 1:, :, :]
             imgs = torch.cat([img1, img2], dim=1).transpose(1, 2).flatten(end_dim=1)
-            imgs = self.pad(imgs)
             flow = self.flow_est(imgs, test_mode=True)
             imgs = self.flow_pipe(flow, dtype, device)
             imgs = imgs.unflatten(dim=0, sizes=(B, T - 1)).transpose(1, 2)
@@ -118,7 +114,7 @@ class APN_fly(nn.Module):
     def flow_pipe(self, x, dtype, device):
         imgs = np.array([quantize_flow(d['flow']) for d in x])
         imgs = torch.from_numpy(imgs).to(dtype).to(device)
-        imgs = self.unpad(imgs)
+        imgs = self.center_crop(imgs)
         imgs = (imgs - 127.5) / 127.5
         return imgs
 
