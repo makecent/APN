@@ -7,7 +7,7 @@ model = dict(
     type='Recognizer3D',
     backbone=dict(type='MViT2'),
     cls_head=dict(
-        type='I3dHead',
+        type='I3DHead',
         num_classes=400,
         in_channels=768),
     train_cfg=dict(
