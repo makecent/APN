@@ -49,7 +49,7 @@ class I3DHead(BaseHead):
 
     def init_weights(self):
         """Initiate the parameters from scratch."""
-        normal_init(self.fc_cls, std=self.init_std)
+        normal_init(self.cls_fc, std=self.init_std)
 
     def forward(self, x):
         """Defines the computation performed at every call.
@@ -69,6 +69,6 @@ class I3DHead(BaseHead):
         # [N, in_channels, 1, 1, 1]
         x = x.view(x.shape[0], -1)
         # [N, in_channels]
-        cls_score = self.fc_cls(x)
+        cls_score = self.cls_fc(x)
         # [N, num_classes]
         return cls_score
