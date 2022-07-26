@@ -9,7 +9,8 @@ model = dict(
     cls_head=dict(
         type='I3DHead',
         num_classes=400,
-        in_channels=768),
+        in_channels=768,
+        spatial_type=None),
     train_cfg=dict(
         blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlending', num_classes=400, alpha=.8),
                                                           dict(type='CutmixBlending', num_classes=400, alpha=1.))))
