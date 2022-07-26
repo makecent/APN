@@ -12,9 +12,9 @@ model = dict(
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
-    train_cfg=dict(type='BatchAugBlending', blending=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
-                                                      dict(type='CutmixBlendingProg', num_classes=400, alpha=1.))
-                   )
+    train_cfg=dict(
+        blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
+                                                          dict(type='CutmixBlendingProg', num_classes=400, alpha=1.))))
 )
 
 # input configuration

@@ -8,6 +8,7 @@ from mmcv.cnn import kaiming_init
 from mmcv.runner import load_checkpoint
 from mmaction.models.builder import HEADS, build_loss
 
+
 @HEADS.register_module()
 class APNHead(nn.Module, metaclass=ABCMeta):
     """Regression head for APN.
