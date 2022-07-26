@@ -7,11 +7,9 @@ model = dict(
     type='Recognizer3D',
     backbone=dict(type='MViT2'),
     cls_head=dict(
-        type='APNHead',
+        type='I3dHead',
         num_classes=400,
-        in_channels=768,
-        dropout_ratio=0.5,
-        avg3d=False),
+        in_channels=768),
     train_cfg=dict(
         blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlending', num_classes=400, alpha=.8),
                                                           dict(type='CutmixBlending', num_classes=400, alpha=1.))))

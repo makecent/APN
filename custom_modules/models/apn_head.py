@@ -33,7 +33,6 @@ class APNHead(nn.Module, metaclass=ABCMeta):
                  loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
                  dropout_ratio=0.5,
                  avg3d=True,
-                 reg_head=True,
                  pretrained=None):
         super().__init__()
 
@@ -41,9 +40,7 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.in_channels = in_channels
         self.hid_channels = hid_channels
         self.loss_cls = build_loss(loss_cls)
-        self.reg_head = reg_head
-        if reg_head:
-            self.loss_reg = build_loss(loss_reg)
+        self.loss_reg = build_loss(loss_reg)
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
         self.pretrained = pretrained
@@ -56,15 +53,13 @@ class APNHead(nn.Module, metaclass=ABCMeta):
 
         self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
 
-        if reg_head:
-            self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
-            self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
+        self.coral_fc = nn.Linear(self.in_channels, 1, bias=False)
+        self.coral_bias = nn.Parameter(torch.zeros(1, self.num_stages), requires_grad=True)
 
     def init_weights(self):
         kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
-        if self.reg_head:
-            kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
-            nn.init.constant_(self.coral_bias, 0)
+        kaiming_init(self.coral_fc, a=0, nonlinearity='relu', distribution='uniform')
+        nn.init.constant_(self.coral_bias, 0)
         if self.pretrained:
             load_checkpoint(self, self.pretrained)
 
@@ -73,8 +68,5 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = x.view(x.shape[0], -1)
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
-        if self.reg_head:
-            reg_score = self.coral_fc(x) + self.coral_bias
-            return cls_score, reg_score
-        else:
-            return cls_score
+        reg_score = self.coral_fc(x) + self.coral_bias
+        return cls_score, reg_score
