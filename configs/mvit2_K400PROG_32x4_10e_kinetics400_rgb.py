@@ -93,7 +93,7 @@ evaluation = dict(metrics=['top_k_accuracy', 'mean_class_accuracy'])
 
 # optimizer
 optimizer = dict(type='AdamW',
-                 lr=1e-5,
+                 lr=1e-4,
                  weight_decay=0.05,
                  paramwise_cfg=dict(
                      custom_keys={
@@ -104,12 +104,7 @@ optimizer = dict(type='AdamW',
                  )
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
-lr_config = dict(policy='CosineAnnealing',
-                 min_lr_ratio=0.01,
-                 warmup='linear',
-                 warmup_ratio=0.01,
-                 warmup_iters=1,
-                 warmup_by_epoch=True)
+lr_config = dict(policy='CosineAnnealing', min_lr_ratio=0.01)
 total_epochs = 10
 fp16 = dict()
 load_from = "work_dirs/apn_mvit2_32x4_10e_kinetics400_rgb/epoch_10.pth"
