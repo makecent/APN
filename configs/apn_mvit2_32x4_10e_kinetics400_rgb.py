@@ -13,8 +13,9 @@ model = dict(
         dropout_ratio=0.5,
         avg3d=False,
         pretrained="checkpoints/slowfast/MViTv2_B_32x3_k400_HEADONLY.pyth"),
-    blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
-                                                          dict(type='CutmixBlendingProg', num_classes=400, alpha=1.))),
+    train_cfg=dict(
+        blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=400, alpha=.8),
+                                                          dict(type='CutmixBlendingProg', num_classes=400, alpha=1.)))),
 )
 
 # input configuration

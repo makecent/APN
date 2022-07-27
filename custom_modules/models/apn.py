@@ -16,17 +16,23 @@ class APN(nn.Module):
     def __init__(self,
                  backbone,
                  cls_head,
-                 blending=None):
+                 train_cfg=None,
+                 test_cfg=None):
         super().__init__()
         self.backbone = build_backbone(backbone)
         self.cls_head = build_head(cls_head)
         self.init_weights()
         self.fp16_enabled = False
-        self.blending = blending
-        if blending:
+        self.train_cfg = train_cfg
+        self.test_cfg = test_cfg
+        if train_cfg is not None and 'blending' in train_cfg:
             from mmcv.utils import build_from_cfg
             from mmaction.datasets.builder import BLENDINGS
-            self.blending = build_from_cfg(blending, BLENDINGS)
+            self.blending = build_from_cfg(train_cfg['blending'], BLENDINGS)
+        if test_cfg is not None and 'feature_extraction' in test_cfg:
+            self.feature_extraction = True
+        else:
+            self.feature_extraction = False
 
     def init_weights(self):
         """Weight initialization for model."""
@@ -48,13 +54,6 @@ class APN(nn.Module):
 
         if self.blending is not None:
             imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
-
-        # if progression_label.ndim < 3:
-        #     ordinal_label = torch.zeros(imgs.shape[0], self.cls_head.num_stages).type_as(progression_label)
-        #     denormalized_prog = (progression_label * self.cls_head.num_stages).round().int()
-        #     for i, prog in enumerate(denormalized_prog):
-        #         ordinal_label[i, :prog] = 1.0
-        #     progression_label = ordinal_label
 
         cls_score, reg_score = self._forward(imgs)
 
@@ -97,7 +96,8 @@ class APN(nn.Module):
         """Define the computation performed at every call."""
         if return_loss:
             return self.forward_train(*args, **kwargs)
-
+        elif self.feature_extraction:
+            return self.feature_extract(*args, **kwargs)
         return self.forward_test(*args, **kwargs)
 
     def train_step(self, data_batch, optimizer, **kwargs):
@@ -110,9 +110,20 @@ class APN(nn.Module):
             num_samples=len(next(iter(data_batch.values()))))
 
         return outputs
+    #
+    # def val_step(self, data_batch, optimizer, **kwargs):
+    #     results = self.forward(return_loss=False, **data_batch)
+    #     outputs = dict(results=results)
+    #
+    #     return outputs
 
-    def val_step(self, data_batch, optimizer, **kwargs):
-        results = self.forward(return_loss=False, **data_batch)
-        outputs = dict(results=results)
-
-        return outputs
+    def feature_extract(self, imgs):
+        batch_size, num_segs = imgs.shape[:2]
+        imgs = imgs.reshape((-1,) + imgs.shape[2:])
+        feat = self.backbone(imgs)
+        if self.cls_head.avg3d:
+            feat = self.cls_head.avg_pool(feat)
+        if num_segs > 1:
+            feat = feat.reshape((batch_size, num_segs, -1))
+            feat = feat.mean(axis=1)
+        return feat

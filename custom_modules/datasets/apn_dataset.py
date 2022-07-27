@@ -57,7 +57,6 @@ class APNDataset(Dataset):
                  filename_tmpl='img_{:05}.jpg',
                  start_index=0,
                  modality='RGB',
-                 background_ratio=0,
                  test_mode=False):
         super().__init__()
         self.ann_files = ann_files if isinstance(ann_files, (list, tuple)) else [ann_files]
@@ -71,7 +70,6 @@ class APNDataset(Dataset):
         self.start_index = start_index
         assert modality in ['RGB', 'Flow', 'Video']
         self.modality = modality
-        self.background_ratio = background_ratio
         self.pipeline = Compose(pipeline)
 
         self.gt_infos, self.video_infos = self.load_gt_infos()
