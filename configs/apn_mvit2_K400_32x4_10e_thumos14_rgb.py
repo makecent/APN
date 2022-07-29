@@ -126,4 +126,4 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
-load_from = "checkpoints/mvit2/epoch_2.pth"
+load_from = "work_dirs/apn_mvit2_32x4_10e_kinetics400_rgb/epoch_10.pth"
