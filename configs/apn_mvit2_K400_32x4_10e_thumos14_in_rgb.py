@@ -122,9 +122,10 @@ optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
 lr_config = dict(policy='CosineAnnealing',
                  min_lr_ratio=0.01,
+                 by_epoch=False,
                  warmup='linear',
                  warmup_ratio=0.01,
-                 warmup_iters=1,
+                 warmup_iters=125,
                  warmup_by_epoch=True)
 total_epochs = 1250
 
