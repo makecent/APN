@@ -9,6 +9,7 @@ import torch
 import warnings
 from torch.nn import functional as F
 
+
 @PIPELINES.register_module()
 class FetchStackedFrames(object):
 
@@ -47,6 +48,20 @@ class FetchStackedFrames(object):
         results['clip_len'] = self.clip_len
         results['num_clips'] = self.num_clips
         results['frame_interval'] = self.frame_interval
+        return results
+
+
+@PIPELINES.register_module()
+class SampleActionFrames(SampleFrames):
+
+    def __call__(self, results):
+        total_frames = results['total_frames']
+        results.update(super().__call__(dict(total_frames=results['action_frames'], start_index=0)))
+        results['progression_label'] = (results['frame_inds'] / results['action_frames']).mean()
+        results['frame_inds'] += results['action_start']
+        results['total_frames'] = total_frames
+        if not (results['frame_inds'] < total_frames).all():
+            print('haha')
         return results
 
 
