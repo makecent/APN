@@ -1,8 +1,6 @@
-from mmaction.datasets.pipelines import DecordInit, DecordDecode
+import decord
 
-results = dict(filename='my_data/kinetics400/videos_val/abseiling/y3-3i88mNPc_000008_000018.mp4')
-init = DecordInit()
-decode = DecordDecode()
-results = init(results)
-results = decode(results)
-print(results)
+video_reader = decord.VideoReader('/home/louis/PycharmProjects/APN/my_data/kinetics400/videos_val/barbequing/hJoIok6KhSw_000554_000564.mp4')
+
+imgs = list(video_reader.get_batch([3, 3 + 1]).asnumpy())
+print()
