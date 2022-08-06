@@ -52,7 +52,7 @@ train_pipeline = [
     dict(type='RandomErasing')
 ]
 val_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval, num_clips=1000),
+    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
@@ -62,7 +62,7 @@ val_pipeline = [
     dict(type='ToTensor', keys=['imgs']),
 ]
 test_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval, num_clips=1000),
+    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
@@ -81,7 +81,9 @@ data = dict(
         pipeline=train_pipeline,
         data_prefixes=data_train,
         filename_tmpl='img_{:05}.jpg',
-        modality='RGB'
+        modality='RGB',
+        clip_len=clip_len,
+        frame_interval=frame_interval
     ),
     val=dict(
         type=dataset_type,
@@ -103,7 +105,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
+evaluation = dict(interval=250, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW',
@@ -124,6 +126,10 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_ratio=0.01,
                  warmup_iters=1,
                  warmup_by_epoch=True)
-total_epochs = 10
+total_epochs = 1250
+
+# runtime
+checkpoint_config = dict(interval=250)
+log_config = dict(interval=500)
 fp16 = dict()
 load_from = "work_dirs/apn_mvit2_32x4_10e_kinetics400_rgb/epoch_10.pth"

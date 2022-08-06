@@ -57,6 +57,8 @@ class APN_INDataset(Dataset):
                  filename_tmpl='img_{:05}.jpg',
                  start_index=0,
                  modality='RGB',
+                 clip_len=32,
+                 frame_interval=4,
                  test_mode=False):
         super().__init__()
         self.ann_files = ann_files if isinstance(ann_files, (list, tuple)) else [ann_files]
@@ -68,6 +70,8 @@ class APN_INDataset(Dataset):
         self.untrimmed = untrimmed
         self.filename_tmpl = filename_tmpl
         self.start_index = start_index
+        self.clip_len = clip_len
+        self.frame_interval = frame_interval
         assert modality in ['RGB', 'Flow', 'Video']
         self.modality = modality
         self.pipeline = Compose(pipeline)
@@ -126,11 +130,14 @@ class APN_INDataset(Dataset):
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
                     'gt_labels']
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
+                    action_len = end_f -start_f + 1
+                    if action_len <= self.clip_len * self.frame_interval:
+                        continue
                     action_info = dict(filename=video_name) if self.modality == 'Video' else \
                                   dict(frame_dir=video_name,
                                        total_frames=total_frames)
                     action_info.update(dict(
-                                       action_frames=end_f - start_f + 1,
+                                       action_frames=action_len,
                                        action_start=start_f,
                                        action_end=end_f,
                                        class_label=label))
@@ -138,17 +145,22 @@ class APN_INDataset(Dataset):
             return action_infos
         else:
             # Testing dataset (untrimmed)
-            video_infos = []
-            for video_name, info in self.video_infos.items():
-                video_info = {}
-                if self.modality == 'Video':
-                    video_info['filename'] = video_name
-                else:
-                    video_info['frame_dir'] = video_name
-                    video_info['total_frames'] = info['total_frames']
-                video_infos.append(video_info)
+            frame_infos = []
+            for video_name, video_info in self.video_infos.items():
+                # video_name = osp.join(data_prefix, video_name)
+                total_frames = video_info['total_frames']
+                frame_inds = list(range(self.start_index, self.start_index + total_frames))
+                frame_inds = uniform_sampling_1d(frame_inds, self.test_sampling)
 
-            return video_infos
+                for frm_idx in frame_inds:
+                    frame_info = {'frame_index': frm_idx}
+                    if self.modality == 'Video':
+                        frame_info['filename'] = video_name
+                    else:
+                        frame_info['frame_dir'] = video_name
+                        frame_info['total_frames'] = total_frames
+                    frame_infos.append(frame_info)
+            return frame_infos
 
     @staticmethod
     def dump_results(results, out):

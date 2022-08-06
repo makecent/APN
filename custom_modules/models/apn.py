@@ -29,6 +29,8 @@ class APN(nn.Module):
             from mmcv.utils import build_from_cfg
             from mmaction.datasets.builder import BLENDINGS
             self.blending = build_from_cfg(train_cfg['blending'], BLENDINGS)
+        else:
+            self.blending = None
         if test_cfg is not None and 'feature_extraction' in test_cfg:
             self.feature_extraction = True
         else:

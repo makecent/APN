@@ -14,7 +14,6 @@ from mmcv.fileio import FileClient
 import copy as cp
 
 
-
 @PIPELINES.register_module()
 class FetchStackedFrames(object):
 
@@ -66,7 +65,8 @@ class SampleActionFrames(SampleFrames):
         results['frame_inds'] += results['action_start']
         results['total_frames'] = total_frames
         if not (results['frame_inds'] < total_frames).all():
-            print('haha')
+            warnings.warn(f"Something must be wrong here: some sampled frame indexes {results['frame_inds']} "
+                          f"are greater than the total frames {total_frames} of video")
         return results
 
 
