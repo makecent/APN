@@ -14,7 +14,8 @@ conda activate open-mmlab
 conda install pytorch torchvision -c pytorch -y
 pip install git+https://github.com/open-mmlab/mim.git
 mim install mmaction2 -f https://github.com/open-mmlab/mmaction2.git
-pip install tensorboard future
+mim install mmdet
+pip install tensorboard future timm pytorchvideo
 conda install pandas h5py scipy -y
 
 ## We don't specify the versions of pytorch, mmcv, and mmaction2 because we always follow the latest ones.

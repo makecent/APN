@@ -1,6 +1,6 @@
 import numpy as np
 from mmaction.datasets.builder import PIPELINES
-from mmaction.datasets.pipelines import SampleFrames
+from mmaction.datasets.pipelines import SampleFrames, RawFrameDecode
 from mmaction.datasets.pipelines import ThreeCrop as _ThreeCrop
 from mmaction.datasets.pipelines.augmentations import _init_lazy_if_proper
 from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
@@ -8,6 +8,11 @@ from mmcv.utils import build_from_cfg
 import torch
 import warnings
 from torch.nn import functional as F
+import mmcv
+import os.path as osp
+from mmcv.fileio import FileClient
+import copy as cp
+
 
 @PIPELINES.register_module()
 class FetchStackedFrames(object):
@@ -218,6 +223,7 @@ class BatchAugBlending:
             repeated_cls_label.append(mixed_class_label)
         return torch.cat(repeated_imgs), torch.cat(repeated_cls_label)
 
+
 @PIPELINES.register_module(force=True)
 class ThreeCrop(_ThreeCrop):
     """
@@ -274,3 +280,60 @@ class ThreeCrop(_ThreeCrop):
     def __repr__(self):
         repr_str = f'{self.__class__.__name__}(crop_size={self.crop_size})'
         return repr_str
+
+
+@PIPELINES.register_module()
+class ConcateFlowDecode(RawFrameDecode):
+    def __call__(self, results):
+        mmcv.use_backend(self.decoding_backend)
+
+        directory = results['frame_dir']
+        filename_tmpl = results['filename_tmpl']
+        modality = results['modality']
+        assert modality == 'Flow', NotImplementedError
+
+        if self.file_client is None:
+            self.file_client = FileClient(self.io_backend, **self.kwargs)
+
+        imgs = list()
+
+        if results['frame_inds'].ndim != 1:
+            results['frame_inds'] = np.squeeze(results['frame_inds'])
+
+        offset = results.get('offset', 0)
+
+        cache = {}
+        for i, frame_idx in enumerate(results['frame_inds']):
+            # Avoid loading duplicated frames
+            if frame_idx in cache:
+                imgs.append(cp.deepcopy(imgs[2 * cache[frame_idx]]))
+                imgs.append(cp.deepcopy(imgs[2 * cache[frame_idx] + 1]))
+                continue
+            else:
+                cache[frame_idx] = i
+
+            frame_idx += offset
+
+            filepath = osp.join(directory, filename_tmpl.format(frame_idx))
+            img_bytes = self.file_client.get(filepath)
+            # Get frame with channel order RGB directly.
+            cur_frame = mmcv.imfrombytes(img_bytes, flag='grayscale')
+            imgs.extend(np.split(cur_frame, 2, axis=0))
+
+        results['imgs'] = imgs
+        results['original_shape'] = imgs[0].shape[:2]
+        results['img_shape'] = imgs[0].shape[:2]
+
+        # we resize the gt_bboxes and proposals to their real scale
+        if 'gt_bboxes' in results:
+            h, w = results['img_shape']
+            scale_factor = np.array([w, h, w, h])
+            gt_bboxes = results['gt_bboxes']
+            gt_bboxes = (gt_bboxes * scale_factor).astype(np.float32)
+            results['gt_bboxes'] = gt_bboxes
+            if 'proposals' in results and results['proposals'] is not None:
+                proposals = results['proposals']
+                proposals = (proposals * scale_factor).astype(np.float32)
+                results['proposals'] = proposals
+
+        return results
