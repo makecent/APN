@@ -131,7 +131,7 @@ class APN_INDataset(Dataset):
                     'gt_labels']
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
                     action_len = end_f -start_f + 1
-                    if action_len <= self.clip_len * self.frame_interval:
+                    if action_len <= 2 * (self.clip_len * self.frame_interval):
                         continue
                     action_info = dict(filename=video_name) if self.modality == 'Video' else \
                                   dict(frame_dir=video_name,
