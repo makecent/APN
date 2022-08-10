@@ -1,17 +1,18 @@
+import copy as cp
+import os.path as osp
+import warnings
+
+import mmcv
 import numpy as np
+import torch
+from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
 from mmaction.datasets.builder import PIPELINES
 from mmaction.datasets.pipelines import SampleFrames, RawFrameDecode
 from mmaction.datasets.pipelines import ThreeCrop as _ThreeCrop
 from mmaction.datasets.pipelines.augmentations import _init_lazy_if_proper
-from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
-from mmcv.utils import build_from_cfg
-import torch
-import warnings
-from torch.nn import functional as F
-import mmcv
-import os.path as osp
 from mmcv.fileio import FileClient
-import copy as cp
+from mmcv.utils import build_from_cfg
+from torch.nn import functional as F
 
 
 @PIPELINES.register_module()
@@ -41,7 +42,7 @@ class FetchStackedFrames(object):
         clip_len = self.clip_len * self.num_clips
         start_index = results['start_index']
         total_frames = results['total_frames']
-        frame_inds = results['frame_index'] + np.arange(-clip_len/2, clip_len/2, dtype=int) * self.frame_interval
+        frame_inds = results['frame_index'] + np.arange(-clip_len / 2, clip_len / 2, dtype=int) * self.frame_interval
 
         if self.out_of_bound_opt == 'loop':
             frame_inds = np.mod(frame_inds, total_frames)
@@ -66,7 +67,10 @@ class SampleActionFrames(SampleFrames):
         results['total_frames'] = total_frames
         if not (results['frame_inds'] < total_frames).all():
             warnings.warn(f"Something must be wrong here: some sampled frame indexes {results['frame_inds']} "
-                          f"are greater than the total frames {total_frames} of video")
+                          f"are greater than the total frames {total_frames} of video. "
+                          f"Video: {results['frame_dir']}"
+                          f"Total Frames: {total_frames}"
+                          f"Action: {[results['action_start'], results['action_end']]}")
         return results
 
 
@@ -86,7 +90,7 @@ class FetchGlobalFrames:
         start_index = results['start_index']
         total_frames = results['total_frames']
         frame_inds = self.tsn_sampler(dict(total_frames=self.sample_range, start_index=start_index))['frame_inds']
-        frame_inds += results['frame_index'] - self.sample_range//2
+        frame_inds += results['frame_index'] - self.sample_range // 2
         frame_inds = np.clip(frame_inds, start_index, start_index + total_frames - 1)
 
         results['frame_inds'] = np.concatenate([results['frame_inds'], frame_inds])
@@ -131,7 +135,6 @@ class MixupBlendingProg(MixupBlending):
         return mixed_imgs, mixed_class_label, mixed_prog_label
 
     def do_blending(self, imgs, class_label, progression_label):
-
         lam = self.beta.sample()
         batch_size = imgs.size(0)
         rand_index = torch.randperm(batch_size)
@@ -163,8 +166,8 @@ class CutmixBlendingProg(CutmixBlending):
         cut_h = torch.tensor(int(h * cut_rat))
 
         # uniform
-        cx = torch.randint(w, (1, ))[0]
-        cy = torch.randint(h, (1, ))[0]
+        cx = torch.randint(w, (1,))[0]
+        cy = torch.randint(h, (1,))[0]
 
         bbx1 = torch.clamp(cx - torch.div(cut_w, 2, rounding_mode='floor'), 0, w)
         bby1 = torch.clamp(cy - torch.div(cut_h, 2, rounding_mode='floor'), 0, h)
@@ -174,14 +177,13 @@ class CutmixBlendingProg(CutmixBlending):
         return bbx1, bby1, bbx2, bby2
 
     def do_blending(self, imgs, class_label, progression_label):
-
         batch_size = imgs.size(0)
         rand_index = torch.randperm(batch_size)
         lam = self.beta.sample()
 
         bbx1, bby1, bbx2, bby2 = self.rand_bbox(imgs.size(), lam)
         imgs[:, ..., bby1:bby2, bbx1:bbx2] = imgs[rand_index, ..., bby1:bby2,
-                                                  bbx1:bbx2]
+                                             bbx1:bbx2]
         lam = 1 - (1.0 * (bbx2 - bbx1) * (bby2 - bby1) /
                    (imgs.size()[-1] * imgs.size()[-2]))
 
@@ -245,6 +247,7 @@ class ThreeCrop(_ThreeCrop):
     Support short-side center crop now;
     Repeat progression label three times;
     """
+
     def __call__(self, results):
         _init_lazy_if_proper(results, False)
         if 'gt_bboxes' in results or 'proposals' in results:

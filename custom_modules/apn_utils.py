@@ -416,6 +416,7 @@ class CrossEntropyLossV2(BaseWeightedLoss):
 
         return loss_cls
 
+
 @LOSSES.register_module()
 class BCELossWithLogitsV2(BaseWeightedLoss):
     """Binary Cross Entropy Loss with logits.

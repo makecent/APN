@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='APN',
-    backbone=dict(type='MViT2', pretrained=False),
+    backbone=dict(type='MViT2', pretrained=False, num_frames=16),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
@@ -18,7 +18,7 @@ model = dict(
 )
 
 # input configuration
-clip_len = 32
+clip_len = 16
 frame_interval = 4
 
 # dataset settings
@@ -58,8 +58,8 @@ val_pipeline = [
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs']),
+    dict(type='Collect', keys=['imgs', 'raw_progression'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs', 'raw_progression']),
 ]
 test_pipeline = [
     dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
@@ -68,8 +68,8 @@ test_pipeline = [
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs']),
+    dict(type='Collect', keys=['imgs', 'raw_progression'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs', 'raw_progression']),
 ]
 
 data = dict(
