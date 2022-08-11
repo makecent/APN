@@ -240,7 +240,6 @@ class APN_INDataset(Dataset):
                 eval_results['MAE'] = MAE
                 log_msg = f'\nMAE\t{MAE:.2f}'
                 print_log(log_msg, logger=logger)
-                del l1_error, MAE
                 continue
 
             if metric == 'mAP':
