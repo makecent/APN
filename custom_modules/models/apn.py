@@ -91,7 +91,7 @@ class APN(nn.Module):
 
         if raw_progression is not None:
             prog_mae = torch.abs(progression - raw_progression.squeeze(1))
-            return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy(), prog_mae.detach().cpu().numpy()))
+            return list(zip(cls_score.detach().cpu().numpy(), prog_mae.detach().cpu().numpy()))
         else:
             return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 

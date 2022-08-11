@@ -195,13 +195,6 @@ class APN_INDataset(Dataset):
             if metric not in allowed_metrics:
                 raise KeyError(f'metric {metric} is not supported')
 
-        # decompose the MAE if available
-        if len(results[0]) == 3:
-            cls_score, progression, l1_error = zip(*results)
-            results = zip(cls_score, progression)
-        else:
-            l1_error = None
-
         eval_results = OrderedDict()
         for metric in metrics:
             msg = f'Evaluating {metric}...'
@@ -236,11 +229,19 @@ class APN_INDataset(Dataset):
                 continue
 
             if metric == 'MAE':
-                assert l1_error is not None, "the MAE was computed on the fly, you need input the `raw_progression`"
-                MAE = np.array(l1_error).mean()
+                _, progression = map(np.array, zip(*results))
+                del _
+                if self.untrimmed:
+                    sampled_idx_pre, _, gt_progression = self.get_sample_points_on_untrimmed(return_gt_progs=True)
+                    progression = progression[sampled_idx_pre]
+                else:
+                    gt_progression = np.array(
+                        [frame_info['progression_label'] * 100 for frame_info in self.frame_infos])
+                MAE = np.abs(gt_progression - progression).mean()
                 eval_results['MAE'] = MAE
                 log_msg = f'\nMAE\t{MAE:.2f}'
                 print_log(log_msg, logger=logger)
+                del progression, gt_progression, sampled_idx_pre, _
                 continue
 
             if metric == 'mAP':

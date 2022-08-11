@@ -53,7 +53,6 @@ train_pipeline = [
 ]
 val_pipeline = [
     dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
@@ -64,7 +63,6 @@ val_pipeline = [
 ]
 test_pipeline = [
     dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal'),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
