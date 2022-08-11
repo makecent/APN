@@ -52,7 +52,7 @@ train_pipeline = [
     dict(type='RandomErasing')
 ]
 val_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
@@ -62,7 +62,7 @@ val_pipeline = [
     dict(type='ToTensor', keys=['imgs']),
 ]
 test_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),

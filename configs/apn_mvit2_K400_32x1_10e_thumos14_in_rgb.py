@@ -52,24 +52,24 @@ train_pipeline = [
     dict(type='RandomErasing')
 ]
 val_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'raw_progression'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs', 'raw_progression']),
+    dict(type='Collect', keys=['imgs'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs']),
 ]
 test_pipeline = [
-    dict(type='SampleFrames', clip_len=clip_len, frame_interval=frame_interval),
+    dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='CenterCrop', crop_size=224),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
-    dict(type='Collect', keys=['imgs', 'raw_progression'], meta_keys=()),
-    dict(type='ToTensor', keys=['imgs', 'raw_progression']),
+    dict(type='Collect', keys=['imgs'], meta_keys=()),
+    dict(type='ToTensor', keys=['imgs']),
 ]
 
 data = dict(
