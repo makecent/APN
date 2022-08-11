@@ -235,7 +235,8 @@ class APN_INDataset(Dataset):
                 del cls_score, cls_label, sampled_idx_pre, _
                 continue
 
-            if l1_error is not None:
+            if metric == 'MAE':
+                assert l1_error is not None, "the MAE was computed on the fly, you need input the `raw_progression`"
                 MAE = np.array(l1_error).mean()
                 eval_results['MAE'] = MAE
                 log_msg = f'\nMAE\t{MAE:.2f}'

@@ -105,7 +105,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(interval=250, metrics=['top_k_accuracy', 'mAP'], save_best='mAP', rule='greater')
+evaluation = dict(interval=250, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW',
