@@ -199,6 +199,8 @@ class APN_INDataset(Dataset):
         if len(results[0]) == 3:
             cls_score, progression, l1_error = zip(*results)
             results = zip(cls_score, progression)
+        else:
+            l1_error = None
 
         eval_results = OrderedDict()
         for metric in metrics:
