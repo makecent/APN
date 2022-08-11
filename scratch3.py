@@ -3,7 +3,7 @@ from mmcv import Config
 import torch
 from matplotlib import pyplot as plt
 import numpy as np
-cfg = Config.fromfile("configs/apn_mvit2_K400_32x1_10e_thumos14_in_rgb.py")
+cfg = Config.fromfile("configs/apn_mvit2_K400_32x4_10e_thumos14_in_rgb.py")
 cfg.data.train.pipeline = [
     dict(type='SampleActionFrames', clip_len=cfg.clip_len, frame_interval=cfg.frame_interval),
     dict(type='LabelToOrdinal', num_stages=100),
