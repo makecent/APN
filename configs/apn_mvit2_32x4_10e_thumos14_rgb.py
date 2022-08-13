@@ -103,7 +103,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(by_epoch=False, interval=44640, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
+evaluation = dict(by_epoch=False, interval=338468, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW',
@@ -126,5 +126,5 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
-work_dir = "work_dirs/apn_mvit2_32x4_10e_thumos14_rgb_g30"
-checkpoint_config = dict(by_epoch=False, interval=44640)
+work_dir = "work_dirs/apn_mvit2_32x4_10e_thumos14_rgb_g60"
+checkpoint_config = dict(by_epoch=False, interval=338468)
