@@ -44,7 +44,7 @@ train_pipeline = [
     dict(type='RandomResizedCrop'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
-    dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
+    # dict(type='pytorchvideo.RandAugment', magnitude=7, num_layers=4, prob=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='FormatShape', input_format='NCTHW'),
     dict(type='Collect', keys=['imgs', 'progression_label', 'class_label'], meta_keys=()),
@@ -103,7 +103,7 @@ data = dict(
     ))
 
 # validation config
-evaluation = dict(by_epoch=False, interval=44640, metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
+evaluation = dict(metrics=['top_k_accuracy', 'MAE', 'mAP'], save_best='mAP', rule='greater')
 
 # optimizer
 optimizer = dict(type='AdamW',
@@ -127,4 +127,4 @@ lr_config = dict(policy='CosineAnnealing',
 total_epochs = 10
 fp16 = dict()
 load_from = "work_dirs/apn_mvit2_32x4_10e_kinetics400_rgb/epoch_10.pth"
-checkpoint_config = dict(by_epoch=False, interval=44640)
+work_dir = "work_dirs/apn_mvit2_K400_32x4_10e_thumos14_rgb_g30"

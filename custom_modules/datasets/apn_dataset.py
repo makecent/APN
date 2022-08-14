@@ -127,7 +127,7 @@ class APNDataset(Dataset):
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
                     'gt_labels']
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
-                    if end_f - start_f + 1 <= 60:
+                    if end_f - start_f + 1 <= 30:
                         continue
                     for frm_idx in range(start_f, end_f + 1):
                         frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(
