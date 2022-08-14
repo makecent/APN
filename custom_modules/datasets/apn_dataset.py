@@ -10,6 +10,7 @@ from mmaction.datasets.pipelines import Compose
 from mmcv import dump, track_parallel_progress
 from mmcv.utils import print_log
 from torch.utils.data import Dataset
+from warnings import warn
 
 from ..apn_utils import apn_detection_on_single_video, uniform_sampling_1d
 from custom_modules.mmdet_utils import bbox2result
@@ -187,7 +188,7 @@ class APNDataset(Dataset):
         allowed_metrics = ['top_k_accuracy', 'MAE', 'mAP']
         for metric in metrics:
             if metric not in allowed_metrics:
-                raise KeyError(f'metric {metric} is not supported')
+                warn(f'metric {metric} is not supported')
 
         eval_results = OrderedDict()
         for metric in metrics:
