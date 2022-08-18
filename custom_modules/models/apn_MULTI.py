@@ -1,3 +1,5 @@
+import warnings
+
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -53,7 +55,10 @@ class APN_MULTI(nn.Module):
     @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
         if self.blending is not None:
-            imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
+            if imgs.size(0) == 1:
+                warnings.warn("Blending is used but batch size per host is equal to 1, thereby blending won't work")
+            else:
+                imgs, class_label, progression_label = self.blending(imgs, class_label, progression_label)
 
         cls_score, reg_score = self._forward(imgs)
 

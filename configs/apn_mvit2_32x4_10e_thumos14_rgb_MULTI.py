@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='APN_MULTI',
-    backbone=dict(type='MViT2', num_frames=32),
+    backbone=dict(type='MViT2', num_frames=16),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
@@ -14,13 +14,13 @@ model = dict(
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
-    train_cfg=dict(
-        blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
-                                                          dict(type='CutmixBlendingProg', num_classes=20, alpha=1.)))),
+    # train_cfg=dict(
+    #     blending=dict(type='BatchAugBlendingProg', blendings=(dict(type='MixupBlendingProg', num_classes=20, alpha=.8),
+    #                                                       dict(type='CutmixBlendingProg', num_classes=20, alpha=1.)))),
 )
 
 # input configuration
-clip_len = 32
+clip_len = 16
 frame_interval = 4
 
 # dataset settings
