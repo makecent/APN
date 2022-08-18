@@ -62,12 +62,15 @@ class APN_MULTI(nn.Module):
 
         cls_score, reg_score = self._forward(imgs)
 
-        class_label = class_label.sum(dim=1)
-        losses = {'loss_cls': self.cls_head.loss_cls(cls_score, class_label)}
+        soft_class_label = F.one_hot(class_label, num_classes=self.cls_head.num_classes).sum(dim=1)
+        losses = {'loss_cls': self.cls_head.loss_cls(cls_score, soft_class_label)}
         if not self.blending:
-            cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
-                                     class_label.detach().cpu().numpy(),
-                                     topk=(1,))
+            if class_label.size(-1) == 1:
+                cls_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
+                                         class_label.detach().cpu().numpy(),
+                                         topk=(1,))
+            else:
+                cls_acc = [1.0]
             losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
 
         losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)

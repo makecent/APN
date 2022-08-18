@@ -154,9 +154,10 @@ class LabelToSoft(object):
 class MixupBlendingProg(MixupBlending):
 
     def __call__(self, imgs, class_label, progression_label):
-        one_hot_label = F.one_hot(class_label, num_classes=self.num_classes)
+        if class_label.size(-1) != self.num_classes:
+            class_label = F.one_hot(class_label, num_classes=self.num_classes)
 
-        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, one_hot_label, progression_label)
+        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, class_label, progression_label)
 
         return mixed_imgs, mixed_class_label, mixed_prog_label
 
@@ -176,9 +177,10 @@ class MixupBlendingProg(MixupBlending):
 class CutmixBlendingProg(CutmixBlending):
 
     def __call__(self, imgs, class_label, progression_label):
-        one_hot_label = F.one_hot(class_label, num_classes=self.num_classes)
+        if class_label.size(-1) != self.num_classes:
+            class_label = F.one_hot(class_label, num_classes=self.num_classes)
 
-        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, one_hot_label, progression_label)
+        mixed_imgs, mixed_class_label, mixed_prog_label = self.do_blending(imgs, class_label, progression_label)
 
         return mixed_imgs, mixed_class_label, mixed_prog_label
 
