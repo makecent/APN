@@ -116,6 +116,32 @@ class LabelToOrdinal(object):
         """Convert progression_label to ordinal label. e.g., 0.031 => [1, 1, 1, 0, ...]."""
         ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype='float32')
         prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
+        prog = sum(prog) / len(prog) if isinstance(prog, (list, tuple)) else prog
+
+        denormalized_prog = round(prog * self.num_stages)
+        results['raw_progression'] = denormalized_prog
+        ordinal_label[:denormalized_prog] = 1.0
+        results['progression_label'] = ordinal_label
+        return results
+
+
+@PIPELINES.register_module()
+class LabelToSoft(object):
+
+    def __init__(self, num_stages=100):
+        self.num_stages = num_stages
+
+    @staticmethod
+    def _get_prog(results):
+        assert results['num_clips'] == 1, "progression label should only used in training"
+        clip_center = results['frame_inds'].mean()
+        prog = np.clip(clip_center / results['total_frames'], a_min=0, a_max=1)
+        return prog
+
+    def __call__(self, results):
+        """Convert progression_label to ordinal label. e.g., 0.031 => [1, 1, 1, 0, ...]."""
+        ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype='float32')
+        prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
 
         denormalized_prog = round(prog * self.num_stages)
         results['raw_progression'] = denormalized_prog

@@ -18,7 +18,7 @@ from custom_modules.mmdet_utils import eval_map
 
 
 @DATASETS.register_module()
-class APNDataset(Dataset):
+class APNDataset_MULTI(Dataset):
     """APN dataset for action detection.
 
     The dataset loads raw frames and apply specified transforms to return a
@@ -126,20 +126,22 @@ class APNDataset(Dataset):
             for video_name, video_info in self.video_infos.items():
                 total_frames, gt_bboxes, gt_labels = video_info['total_frames'], video_info['gt_bboxes'], video_info[
                     'gt_labels']
+                frame_infos_this_video = {}
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
-                    # if end_f - start_f + 1 <= 30:
-                    #     continue
                     for frm_idx in range(start_f, end_f + 1):
-                        frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(
-                            frame_dir=video_name,
-                            total_frames=total_frames)
                         progression_label = (frm_idx - start_f) / (end_f - start_f)
-                        frame_info.update(dict(frame_index=frm_idx,
-                                               class_label=label,
-                                               progression_label=progression_label))
-                        frame_infos.append(frame_info)
-                        # if progression_label < 0.05:
-                        #     frame_infos.extend(([frame_info] * 1))
+                        if frm_idx in frame_infos_this_video:
+                            frame_infos_this_video[frm_idx]['class_label'].append(label)
+                            frame_infos_this_video[frm_idx]['progression_label'].append(progression_label)
+                        else:
+                            frame_info = dict(filename=video_name) if self.modality == 'Video' else dict(
+                                frame_dir=video_name,
+                                total_frames=total_frames)
+                            frame_info.update(dict(frame_index=frm_idx,
+                                                   class_label=[label],
+                                                   progression_label=[progression_label]))
+                            frame_infos_this_video[frm_idx] = frame_info
+                frame_infos.extend(list(frame_infos_this_video.values()))
         else:
             # Testing dataset (untrimmed)
             frame_infos = []
@@ -346,7 +348,7 @@ class APNDataset(Dataset):
 
 
 @DATASETS.register_module()
-class THUMOS14(APNDataset):
+class THUMOS14_MULTI(APNDataset_MULTI):
     CLASSES = ('BaseballPitch', 'BasketballDunk', 'Billiards', 'CleanAndJerk',
                'CliffDiving', 'CricketBowling', 'CricketShot', 'Diving',
                'FrisbeeCatch', 'GolfSwing', 'HammerThrow', 'HighJump',
@@ -356,7 +358,7 @@ class THUMOS14(APNDataset):
 
 
 @DATASETS.register_module()
-class ActivityNet(APNDataset):
+class ActivityNet_MULTI(APNDataset_MULTI):
     CLASSES = (
         'Applying sunscreen', 'Archery', 'Arm wrestling', 'Assembling bicycle', 'BMX', 'Baking cookies', 'Ballet',
         'Bathing dog', 'Baton twirling', 'Beach soccer', 'Beer pong', 'Belly dance', 'Blow-drying hair',
