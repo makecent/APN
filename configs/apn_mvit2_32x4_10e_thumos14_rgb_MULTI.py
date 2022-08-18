@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='APN_MULTI',
-    backbone=dict(type='MViT2', num_frames=16),
+    backbone=dict(type='MViT2', num_frames=32),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
@@ -20,7 +20,7 @@ model = dict(
 )
 
 # input configuration
-clip_len = 16
+clip_len = 32
 frame_interval = 4
 
 # dataset settings
