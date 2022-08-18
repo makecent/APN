@@ -128,5 +128,4 @@ lr_config = dict(policy='CosineAnnealing',
                  warmup_by_epoch=True)
 total_epochs = 10
 fp16 = dict()
-work_dir = "work_dirs/apn_mvit2_32x4_10e_thumos14_rgb_g60"
 checkpoint_config = dict(by_epoch=False, interval=42309)
