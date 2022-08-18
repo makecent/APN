@@ -128,6 +128,8 @@ class APNDataset_MULTI(Dataset):
                     'gt_labels']
                 frame_infos_this_video = {}
                 for (start_f, end_f), label in zip(gt_bboxes, gt_labels):
+                    if end_f - start_f + 1 <= 30:
+                        continue
                     for frm_idx in range(start_f, end_f + 1):
                         progression_label = (frm_idx - start_f) / (end_f - start_f)
                         if frm_idx in frame_infos_this_video:
