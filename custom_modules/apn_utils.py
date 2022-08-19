@@ -465,3 +465,24 @@ class BCELossWithLogitsV2(BaseWeightedLoss):
         loss_cls = F.binary_cross_entropy_with_logits(cls_score, self._smooth(label),
                                                       **kwargs)
         return loss_cls
+
+@LOSSES.register_module()
+class FocalLoss(BCELossWithLogitsV2):
+    def __init__(self, gamma=2.0, alpha=0.25, do_sigmoid=True, do_onehot=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gamma = gamma
+        self.alpha = alpha
+        self.do_sigmoid = do_sigmoid
+        self.do_onehot = do_onehot
+    def _forward(self, cls_score, label, **kwargs):
+        if self.do_onehot:
+            label = F.one_hot(label, num_classes=cls_score.size(-1))
+        if self.do_sigmoid:
+            cls_score = F.sigmoid(cls_score)
+            loss = F.binary_cross_entropy(cls_score, self._smooth(label), **kwargs)
+        else:
+            loss = F.binary_cross_entropy_with_logits(cls_score, self._smooth(label), **kwargs)
+        pt = (1 - cls_score) * label + cls_score * (1 - label)
+        focal_weight = (self.alpha * label + (1 - self.alpha) *
+                        (1 - label)) * pt.pow(self.gamma)
+        return focal_weight * loss
