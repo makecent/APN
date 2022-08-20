@@ -101,8 +101,9 @@ data = dict(
 )
 
 # validation config
-evaluation = dict(metrics=['top_k_accuracy', 'mean_class_accuracy'])
-
+evaluation = dict(interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy'])
+checkpoint_config = dict(interval=5)
+log_config = dict(interval=1000)
 # optimizer
 optimizer = dict(type='AdamW',
                  lr=5e-5,
