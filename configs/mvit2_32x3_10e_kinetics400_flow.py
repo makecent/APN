@@ -75,17 +75,24 @@ data = dict(
         type=dataset_type,
         ann_file=ann_file_train,
         data_prefix=data_root,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        modality='Flow',
+    ),
     val=dict(
         type=dataset_type,
         ann_file=ann_file_val,
         data_prefix=data_root_val,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        modality='Flow',
+    ),
     test=dict(
         type=dataset_type,
         ann_file=ann_file_test,
         data_prefix=data_root_val,
-        pipeline=test_pipeline))
+        pipeline=test_pipeline,
+        modality='Flow',
+    )
+)
 
 # validation config
 evaluation = dict(metrics=['top_k_accuracy', 'mean_class_accuracy'])
