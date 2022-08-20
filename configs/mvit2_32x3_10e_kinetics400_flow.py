@@ -13,9 +13,9 @@ model = dict(
         dropout_ratio=0.5,
         spatial_type=False,
         pretrained="checkpoints/slowfast/MViTv2_B_32x3_k400_HEADONLY.pyth"),
-    train_cfg=dict(
-        blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlending', num_classes=400, alpha=.8),
-                                                          dict(type='CutmixBlending', num_classes=400, alpha=1.)))),
+    # train_cfg=dict(
+    #     blending=dict(type='BatchAugBlending', blendings=(dict(type='MixupBlending', num_classes=400, alpha=.8),
+    #                                                       dict(type='CutmixBlending', num_classes=400, alpha=1.)))),
     test_cfg=dict(average_clips='prob')
 )
 
@@ -102,7 +102,7 @@ evaluation = dict(metrics=['top_k_accuracy', 'mean_class_accuracy'])
 
 # optimizer
 optimizer = dict(type='AdamW',
-                 lr=1e-4,
+                 lr=5e-5,
                  weight_decay=0.05,
                  paramwise_cfg=dict(
                      custom_keys={
