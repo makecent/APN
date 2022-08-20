@@ -27,9 +27,9 @@ frame_interval = 3
 dataset_type = 'RawframeDataset'
 data_root = 'my_data/kinetics400/tvl1_train'
 data_root_val = 'my_data/kinetics400/tvl1_val'
-ann_file_train = 'my_data/kinetics400/kinetics400_train_list_rawframes.txt'
-ann_file_val = 'my_data/kinetics400/kinetics400_val_list_rawframes.txt'
-ann_file_test = 'my_data/kinetics400/kinetics400_val_list_rawframes.txt'
+ann_file_train = 'my_data/kinetics400/kinetics400_train_list_opticalflows.txt'
+ann_file_val = 'my_data/kinetics400/kinetics400_val_list_opticalflows.txt'
+ann_file_test = 'my_data/kinetics400/kinetics400_val_list_opticalflows.txt'
 
 img_norm_cfg = dict(mean=[127.5, 127.5], std=[127.5, 127.5])
 
