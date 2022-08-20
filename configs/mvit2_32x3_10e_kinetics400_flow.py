@@ -78,6 +78,7 @@ data = dict(
         pipeline=train_pipeline,
         modality='Flow',
         filename_tmpl='flow_{}_{:05}.jpg',
+        start_index=0
     ),
     val=dict(
         type=dataset_type,
@@ -86,6 +87,7 @@ data = dict(
         pipeline=val_pipeline,
         modality='Flow',
         filename_tmpl='flow_{}_{:05}.jpg',
+        start_index=0
     ),
     test=dict(
         type=dataset_type,
@@ -94,6 +96,7 @@ data = dict(
         pipeline=test_pipeline,
         modality='Flow',
         filename_tmpl='flow_{}_{:05}.jpg',
+        start_index=0
     )
 )
 
