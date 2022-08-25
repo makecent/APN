@@ -117,6 +117,6 @@ optimizer = dict(type='AdamW',
                  )
 optimizer_config = dict(grad_clip=dict(max_norm=1.0))
 # learning policy
-lr_config = dict(policy='CosineAnnealing', min_lr_ratio=0.01, by_epoch=False)
-total_epochs = 50
+lr_config = dict(policy='CosineRestart', periods=[50, 25], restart_weights=[1, 0.1], min_lr_ratio=0.01, by_epoch=False)
+total_epochs = 75
 fp16 = dict()
