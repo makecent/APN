@@ -5,7 +5,7 @@ _base_ = [
 # model settings
 model = dict(
     type='Recognizer3D',
-    backbone=dict(type='MViT2', pretrained=True, num_frames=16, flow_input=True),
+    backbone=dict(type='MViT2', pretrained=True, num_frames=32, flow_input=True),
     cls_head=dict(
         type='I3DHead',
         num_classes=400,
@@ -20,7 +20,7 @@ model = dict(
 )
 
 # input configuration
-clip_len = 16
+clip_len = 32
 frame_interval = 3
 
 # dataset settings
