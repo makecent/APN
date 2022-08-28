@@ -5,14 +5,14 @@ _base_ = [
 # model settings
 model = dict(
     type='APN_MULTI',
-    backbone=dict(type='MViT2', pretrained=False, num_frames=32, flow_input=True),
+    backbone=dict(type='MViT2', pretrained=True, num_frames=32, flow_input=True),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
-        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
-        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
-        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
+        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
+        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
+        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
+        # loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
@@ -21,7 +21,7 @@ model = dict(
     #                                                       dict(type='CutmixBlendingProg', num_classes=20, alpha=1.)))),
 )
 
-load_from = 'work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth'
+# load_from = 'work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth'
 # input configuration
 clip_len = 32
 frame_interval = 4
