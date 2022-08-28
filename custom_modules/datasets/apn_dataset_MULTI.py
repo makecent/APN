@@ -216,6 +216,7 @@ class APNDataset_MULTI(Dataset):
                 if self.untrimmed:
                     sampled_idx_pre, _, cls_label = self.get_sample_points_on_untrimmed(return_cls_label=True)
                     cls_score = cls_score[sampled_idx_pre]
+                    del sampled_idx_pre, _
                 else:
                     cls_label = np.array([frame_info['class_label'] for frame_info in self.frame_infos])
 
@@ -226,7 +227,7 @@ class APNDataset_MULTI(Dataset):
                     log_msg.append(f'\ntop{k}_acc\t{acc:.4f}')
                 log_msg = ''.join(log_msg)
                 print_log(log_msg, logger=logger)
-                del cls_score, cls_label, sampled_idx_pre, _
+                del cls_score, cls_label
                 continue
 
             if metric == 'MAE':

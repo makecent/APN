@@ -92,6 +92,7 @@ data = dict(
         data_prefixes=data_val,
         filename_tmpl='flow_{}_{:05}.jpg',
         modality='Flow',
+        untrimmed=True
     ),
     test=dict(
         type=dataset_type,
