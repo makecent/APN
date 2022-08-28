@@ -22,7 +22,7 @@ class MViT2(torch.nn.Module):
         model = MODEL_REGISTRY.get(name)(cfg)
 
         if flow_input:
-            model.patch_embed.proj = torch.nn.Conv3d(96, 2, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
+            model.patch_embed.proj = torch.nn.Conv3d(2, 96, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
 
         if pretrained:
             if not isinstance(pretrained, str):
