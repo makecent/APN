@@ -54,6 +54,7 @@ class APN_MULTI(nn.Module):
 
     @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
+        print(imgs.dtype)
         if self.blending is not None:
             if imgs.size(0) == 1:
                 warnings.warn("Blending is used but batch size per host is equal to 1, thereby blending won't work")
