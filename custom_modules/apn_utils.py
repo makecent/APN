@@ -440,12 +440,9 @@ class BCELossWithLogitsV2(BaseWeightedLoss):
     @staticmethod
     def _smooth(label, smoothing=0.1):
         assert 0 <= smoothing < 1
-        if smoothing > 0:
-            with torch.no_grad():
-                label = label * (1.0 - smoothing) + (label * smoothing).mean(dim=-1)
-            return label
-        else:
-            return label
+        with torch.no_grad():
+            label = label * (1.0 - smoothing) + (label * smoothing).mean(dim=-1)
+        return label
 
     def _forward(self, cls_score, label, **kwargs):
         """Forward function.
