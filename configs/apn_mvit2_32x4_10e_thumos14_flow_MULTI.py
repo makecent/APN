@@ -9,8 +9,10 @@ model = dict(
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
-        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
+        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
+        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
+        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
+        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
@@ -36,8 +38,7 @@ ann_file_train = (data_root + '/annotations/apn/apn_train.csv',
                   data_root + '/annotations/apn/apn_val.csv')
 ann_file_val = data_root + '/annotations/apn/apn_test.csv'
 
-img_norm_cfg = dict(
-    mean=[128, 128], std=[128, 128], to_bgr=False)
+img_norm_cfg = dict(mean=[127.5, 127.5], std=[127.5, 127.5], to_bgr=False)
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
@@ -77,6 +78,7 @@ test_pipeline = [
 data = dict(
     videos_per_gpu=1,
     workers_per_gpu=4,
+    test_dataloader=dict(videos_per_gpu=1),
     train=dict(
         type=dataset_type,
         ann_files=ann_file_train,
