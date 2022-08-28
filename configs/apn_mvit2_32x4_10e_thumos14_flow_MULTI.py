@@ -7,6 +7,7 @@ model = dict(
     type='APN_MULTI',
     backbone=dict(type='MViT2',
                   pretrained='work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth',
+                  pretrain_prefix='backbone',
                   num_frames=32,
                   flow_input=True),
     cls_head=dict(
