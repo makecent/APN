@@ -5,7 +5,10 @@ _base_ = [
 # model settings
 model = dict(
     type='APN_MULTI',
-    backbone=dict(type='MViT2', pretrained=True, num_frames=32, flow_input=True),
+    backbone=dict(type='MViT2',
+                  pretrained='work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth',
+                  num_frames=32,
+                  flow_input=True),
     cls_head=dict(
         type='APNHead',
         num_classes=20,
@@ -21,7 +24,6 @@ model = dict(
     #                                                       dict(type='CutmixBlendingProg', num_classes=20, alpha=1.)))),
 )
 
-load_from = 'work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth'
 # input configuration
 clip_len = 32
 frame_interval = 4
