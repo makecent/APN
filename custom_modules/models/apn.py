@@ -52,6 +52,7 @@ class APN(nn.Module):
 
     @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
+        print(imgs.dtype)
         hard_class_label = class_label
 
         if self.blending is not None:
