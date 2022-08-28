@@ -21,7 +21,7 @@ class MViT2(torch.nn.Module):
         name = cfg.MODEL.MODEL_NAME
         model = MODEL_REGISTRY.get(name)(cfg)
         if flow_input:
-            self.model.patch_embed.proj = torch.nn.Conv3d(96, 2, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
+            model.patch_embed.proj = torch.nn.Conv3d(96, 2, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
         if pretrained:
             if not isinstance(pretrained, str):
                 if num_frames == 32:
@@ -40,12 +40,6 @@ class MViT2(torch.nn.Module):
                 load_checkpoint(model, pretrained)
         model.head = nn.Identity()
         self.model = model
-        # if flow_input:
-        #
-        #     conv_flow = torch.nn.Conv3d(96, 2, kernel_size=(3, 7, 7), stride=(2, 4, 4), padding=(1, 3, 3))
-        #     conv_flow.weight = torch.nn.Parameter(ww, requires_grad=True)
-        #     conv_flow.bias = model.patch_embed.proj.bias
-        #     self.model.patch_embed.proj = conv_flow
 
     def forward(self, x):
         x = x.unsqueeze(0)
