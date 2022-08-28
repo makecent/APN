@@ -21,7 +21,7 @@ model = dict(
     #                                                       dict(type='CutmixBlendingProg', num_classes=20, alpha=1.)))),
 )
 
-# load_from = 'work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth'
+load_from = 'work_dirs/mvit2_32x3_10e_kinetics400_flow/epoch_50.pth'
 # input configuration
 clip_len = 32
 frame_interval = 4
