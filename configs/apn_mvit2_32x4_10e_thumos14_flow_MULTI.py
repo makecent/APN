@@ -9,10 +9,8 @@ model = dict(
     cls_head=dict(
         type='APNHead',
         num_classes=20,
-        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
-        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.1),
-        # loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
-        # loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
+        loss_cls=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
+        loss_reg=dict(type='BCELossWithLogitsV2', label_smoothing=0.0),
         in_channels=768,
         dropout_ratio=0.5,
         avg3d=False),
