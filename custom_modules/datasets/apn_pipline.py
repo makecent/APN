@@ -118,15 +118,15 @@ class LabelToOrdinal(object):
         prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
         prog = sum(prog) / len(prog) if isinstance(prog, (list, tuple)) else prog
 
+        results['raw_progression'] = round(prog * 100)
         denormalized_prog = round(prog * self.num_stages)
-        results['raw_progression'] = denormalized_prog
         ordinal_label[:denormalized_prog] = 1.0
         results['progression_label'] = ordinal_label
         return results
 
 
 @PIPELINES.register_module()
-class LabelToSoft(object):
+class LabelToCls(object):
 
     def __init__(self, num_stages=100):
         self.num_stages = num_stages
@@ -139,14 +139,13 @@ class LabelToSoft(object):
         return prog
 
     def __call__(self, results):
-        """Convert progression_label to ordinal label. e.g., 0.031 => [1, 1, 1, 0, ...]."""
-        ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype='float32')
+        """Convert progression_label to categorical label. e.g., 0.03 => [0, 0, 0, 1, 0, ...] if 100 classes"""
         prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
+        prog = sum(prog) / len(prog) if isinstance(prog, (list, tuple)) else prog
 
-        denormalized_prog = round(prog * self.num_stages)
-        results['raw_progression'] = denormalized_prog
-        ordinal_label[:denormalized_prog] = 1.0
-        results['progression_label'] = ordinal_label
+        results['raw_progression'] = round(prog * 100)
+        cate_prog = int(round(prog * self.num_stages))
+        results['progression_label'] = F.one_hot(torch.tensor(cate_prog), num_classes=self.num_stages + 1).float()
         return results
 
 
