@@ -69,6 +69,7 @@ class APN(nn.Module):
                                      topk=(1,))
             losses[f'cls_acc'] = torch.tensor(cls_acc, device=cls_score.device)
 
+        print(cls_score.shape, progression_label.shape)
         progression_label = progression_label.squeeze(1)
         losses['loss_reg'] = self.cls_head.loss_reg(reg_score, progression_label)
         self.training_metric(losses, reg_score, progression_label)
