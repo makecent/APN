@@ -8,7 +8,7 @@ from torch.nn import functional as F
 class L1LossWithLogits(BaseWeightedLoss):
 
     def _forward(self, cls_score, label, **kwargs):
-        loss_cls = F.l1_loss(cls_score.sigmoid(), label, **kwargs)
+        loss_cls = F.l1_loss(cls_score.sigmoid(), label.reshape_as(cls_score), **kwargs)
 
         return loss_cls
 
@@ -17,9 +17,10 @@ class L1LossWithLogits(BaseWeightedLoss):
 class L2LossWithLogits(BaseWeightedLoss):
 
     def _forward(self, cls_score, label, **kwargs):
-        loss_cls = F.mse_loss(cls_score.sigmoid(), label, **kwargs)
+        loss_cls = F.mse_loss(cls_score.sigmoid(), label.reshape_as(cls_score), **kwargs)
 
         return loss_cls
+
 
 @LOSSES.register_module(force=True)
 class CrossEntropyLossV2(BaseWeightedLoss):
@@ -120,6 +121,7 @@ class BCELossWithLogitsV2(BaseWeightedLoss):
         loss_cls = F.binary_cross_entropy_with_logits(cls_score, self._smooth(label, self.label_smoothing),
                                                       **kwargs)
         return loss_cls
+
 
 @LOSSES.register_module()
 class FocalLoss(BaseWeightedLoss):
