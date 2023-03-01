@@ -153,7 +153,7 @@ class APNRegHead(nn.Module, metaclass=ABCMeta):
                  in_channels=2048,
                  hid_channels=256,
                  loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 loss_reg=dict(type='L2Loss'),
+                 loss_reg=dict(type='L2LossWithLogits'),
                  dropout_ratio=0.5,
                  avg3d=True,
                  pretrained=None):
