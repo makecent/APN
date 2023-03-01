@@ -84,6 +84,8 @@ class APN(nn.Module):
             reg_acc = torch.count_nonzero(reg_score.argmax(dim=-1) == progression_label.argmax(dim=-1)) / reg_score.shape[0]
             losses[f'reg_acc'] = reg_acc.detach().float()
             raw_prog_label = torch.argmax(progression_label, dim=-1).float() / (progression_label.size(-1) - 1) * 100
+        elif isinstance(self.cls_head, APNRegHead):
+            raw_prog_label = progression_label * 100
         else:
             raise TypeError
 
@@ -119,6 +121,8 @@ class APN(nn.Module):
             progression = torch.argmax(reg_score, dim=-1).float()
             progression = progression / reg_score.size(-1) * 100
             # expectation(todo)
+        elif isinstance(self.cls_head, APNRegHead):
+            progression = reg_score.sigmoid() * 100
         else:
             raise TypeError(f"unsupported apn head: {type(self.cls_head)}")
         return progression

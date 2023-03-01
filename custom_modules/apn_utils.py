@@ -366,6 +366,24 @@ from mmaction.models.builder import LOSSES
 from mmaction.models.losses import BaseWeightedLoss
 from torch.nn import functional as F
 
+
+@LOSSES.register_module(force=True)
+class L1LossWithLogits(BaseWeightedLoss):
+
+    def _forward(self, cls_score, label, **kwargs):
+        loss_cls = F.l1_loss(cls_score.sigmoid(), label, **kwargs)
+
+        return loss_cls
+
+
+@LOSSES.register_module(force=True)
+class L2LossWithLogits(BaseWeightedLoss):
+
+    def _forward(self, cls_score, label, **kwargs):
+        loss_cls = F.mse_loss(cls_score.sigmoid(), label, **kwargs)
+
+        return loss_cls
+
 @LOSSES.register_module(force=True)
 class CrossEntropyLossV2(BaseWeightedLoss):
     """Cross Entropy Loss.
