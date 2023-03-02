@@ -122,7 +122,7 @@ class APN(nn.Module):
             progression = progression / reg_score.size(-1) * 100
             # expectation(todo)
         elif isinstance(self.cls_head, APNRegHead):
-            progression = reg_score.sigmoid() * 100
+            progression = reg_score.sigmoid().squeeze(dim=-1) * 100
         else:
             raise TypeError(f"unsupported apn head: {type(self.cls_head)}")
         return progression

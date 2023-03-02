@@ -235,18 +235,12 @@ class APNDataset(Dataset):
                 else:
                     gt_progression = np.array(
                         [frame_info['progression_label'] * 100 for frame_info in self.frame_infos])
-                print(gt_progression.shape)
-                print(progression.shape)
+                gt_progression, progression = map(np.squeeze, (gt_progression, progression))
                 MAE = np.abs(gt_progression - progression).mean()
-                print('gogo1')
                 eval_results['MAE'] = MAE
-                print('gogo2')
                 log_msg = f'\nMAE\t{MAE:.2f}'
-                print('gogo3')
                 print_log(log_msg, logger=logger)
-                print('gogo4')
                 del progression, gt_progression
-                print('gogo5')
                 continue
 
             if metric == 'mAP':
