@@ -103,7 +103,6 @@ class APN(nn.Module):
 
         cls_score = cls_score.softmax(-1)
         progression = self.decode_progression(reg_score)
-        print(cls_score.shape, progression.shape)
 
         if raw_progression is not None:
             prog_mae = torch.abs(progression - raw_progression.squeeze(1))
