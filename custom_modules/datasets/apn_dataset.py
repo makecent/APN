@@ -235,6 +235,8 @@ class APNDataset(Dataset):
                 else:
                     gt_progression = np.array(
                         [frame_info['progression_label'] * 100 for frame_info in self.frame_infos])
+                    print(gt_progression.shape)
+                print(progression.shape)
                 MAE = np.abs(gt_progression - progression).mean()
                 eval_results['MAE'] = MAE
                 log_msg = f'\nMAE\t{MAE:.2f}'
