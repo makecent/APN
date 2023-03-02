@@ -228,6 +228,7 @@ class APNDataset(Dataset):
             if metric == 'MAE':
                 _, progression = map(np.array, zip(*results))
                 del _
+                print('gogo')
                 if self.untrimmed:
                     sampled_idx_pre, _, gt_progression = self.get_sample_points_on_untrimmed(return_gt_progs=True)
                     progression = progression[sampled_idx_pre]
