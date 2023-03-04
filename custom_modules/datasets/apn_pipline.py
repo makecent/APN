@@ -149,6 +149,30 @@ class LabelToCls(object):
         return results
 
 
+@PIPELINES.register_module()
+class LabelToSoft(object):
+
+    def __init__(self, num_stages=100):
+        self.num_stages = num_stages
+
+    @staticmethod
+    def _get_prog(results):
+        assert results['num_clips'] == 1, "progression label should only used in training"
+        clip_center = results['frame_inds'].mean()
+        prog = np.clip(clip_center / results['total_frames'], a_min=0, a_max=1)
+        return prog
+
+    def __call__(self, results):
+        """Convert progression_label to categorical label. e.g., 0.03 => [0, 0, 0, 1, 0, ...] if 100 classes"""
+        prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
+        prog = sum(prog) / len(prog) if isinstance(prog, (list, tuple)) else prog
+
+        results['raw_progression'] = round(prog * 100)
+        cate_prog = int(round(prog * self.num_stages))
+        soft_prog = F.softmin((torch.arange(0, self.num_stages + 1) - cate_prog).abs().float().sqrt(), dim=-1)
+        results['progression_label'] = soft_prog
+        return results
+
 @BLENDINGS.register_module(force=True)
 class MixupBlendingProg(MixupBlending):
 

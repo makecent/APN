@@ -117,10 +117,12 @@ class APN(nn.Module):
             progression = progression / reg_score.size(-1) * 100
         elif isinstance(self.cls_head, APNClsHead):
             reg_score = reg_score.softmax(dim=-1)
-            # argmax
-            progression = torch.argmax(reg_score, dim=-1).float()
+            # # argmax
+            # progression = torch.argmax(reg_score, dim=-1).float()
+            # progression = progression / reg_score.size(-1) * 100
+            # expectation
+            progression = (reg_score * torch.arange(0, reg_score.size(-1)).type_as(reg_score)).sum(dim=-1)
             progression = progression / reg_score.size(-1) * 100
-            # expectation(todo)
         elif isinstance(self.cls_head, APNRegHead):
             progression = reg_score.sigmoid().squeeze(dim=-1) * 100
         else:

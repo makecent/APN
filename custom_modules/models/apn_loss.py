@@ -23,6 +23,15 @@ class L2LossWithLogits(BaseWeightedLoss):
 
 
 @LOSSES.register_module(force=True)
+class KLDIVLossWithLogits(BaseWeightedLoss):
+
+    def _forward(self, cls_score, label, **kwargs):
+        loss_cls = F.kl_div(torch.log_softmax(cls_score, dim=-1), label, reduction='batchmean', **kwargs)
+
+        return loss_cls
+
+
+@LOSSES.register_module(force=True)
 class CrossEntropyLossV2(BaseWeightedLoss):
     """Cross Entropy Loss.
     Support two kinds of labels and their corresponding loss type. It's worth
