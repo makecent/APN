@@ -11,15 +11,15 @@ model = dict(
                       checkpoint='https://github.com/hassony2/kinetics_i3d_pytorch/raw/master/model/model_rgb.pth'),
         modality='rgb'),
     cls_head=dict(
-        type='APNHead',
+        type='APNClsHead',
         num_classes=20,
-        num_stages=10,
+        num_stages=3,
         in_channels=1024,
         dropout_ratio=0.5))
 
 # input configuration
 clip_len = 8
-frame_interval = 16
+frame_interval = 4
 
 # dataset settings
 dataset_type = 'THUMOS14'
@@ -39,7 +39,7 @@ img_norm_cfg = dict(
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
     dict(type='RawFrameDecode'),
-    dict(type='LabelToOrdinal', num_stages=10),
+    dict(type='LabelToCls', num_stages=3),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     # dict(type='pytorchvideo.RandAugment'),
@@ -112,7 +112,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/exp/10_apn_r3dsony_8x16_10e_thumos14_rgb/'
+work_dir = './work_dirs/exp/cls3_apn_r3dsony_8x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config

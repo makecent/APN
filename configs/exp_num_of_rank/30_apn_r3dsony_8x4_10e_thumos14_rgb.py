@@ -19,7 +19,7 @@ model = dict(
 
 # input configuration
 clip_len = 8
-frame_interval = 16
+frame_interval = 4
 
 # dataset settings
 dataset_type = 'THUMOS14'
@@ -112,7 +112,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/exp/30_apn_r3dsony_8x16_10e_thumos14_rgb/'
+work_dir = './work_dirs/exp/30_apn_r3dsony_8x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
