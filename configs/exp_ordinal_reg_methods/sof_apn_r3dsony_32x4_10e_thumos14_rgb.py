@@ -19,7 +19,7 @@ model = dict(
         dropout_ratio=0.5))
 
 # input configuration
-clip_len = 8
+clip_len = 32
 frame_interval = 4
 
 # dataset settings
@@ -113,7 +113,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/exp/sof_apn_r3dsony_8x4_10e_thumos14_rgb/'
+work_dir = './work_dirs/exp/sof_apn_r3dsony_32x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
