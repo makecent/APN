@@ -21,7 +21,7 @@ class APN(nn.Module):
                  test_cfg=None):
         super().__init__()
         self.backbone = build_backbone(backbone)
-        self.cls_head = build_head(cls_head) #just for compatibility, both cls and loc heads are in it.
+        self.cls_head = build_head(cls_head)  # just for compatibility, both cls and loc heads are in it.
         self.init_weights()
         self.fp16_enabled = False
         self.train_cfg = train_cfg
@@ -77,21 +77,25 @@ class APN(nn.Module):
 
     def training_metric(self, losses, reg_score, progression_label):
         if isinstance(self.cls_head, APNHead):
-            reg_acc = torch.count_nonzero((reg_score > 0.5) == progression_label) / reg_score.numel()
+            reg_acc = torch.count_nonzero((reg_score > 0) == progression_label) / progression_label.numel()
             losses[f'reg_acc'] = reg_acc.detach().float()
             raw_prog_label = torch.count_nonzero(progression_label > 0.5, dim=-1) / progression_label.size(-1) * 100
         elif isinstance(self.cls_head, APNClsHead):
-            reg_acc = torch.count_nonzero(reg_score.argmax(dim=-1) == progression_label.argmax(dim=-1)) / reg_score.shape[0]
+            reg_acc = torch.count_nonzero(reg_score.argmax(dim=-1) == progression_label.argmax(dim=-1)) / \
+                      reg_score.shape[0]
             losses[f'reg_acc'] = reg_acc.detach().float()
             raw_prog_label = torch.argmax(progression_label, dim=-1).float() / (progression_label.size(-1) - 1) * 100
         elif isinstance(self.cls_head, APNRegHead):
             raw_prog_label = progression_label * 100
+        elif isinstance(self.cls_head, APNDecHead):
+            reg_acc = torch.count_nonzero(reg_score.argmax(dim=1) == progression_label) / progression_label.numel()
+            losses[f'reg_acc'] = reg_acc.detach().float()
+            raw_prog_label = torch.count_nonzero(progression_label > 0.5, dim=-1) / progression_label.size(-1) * 100
         else:
             raise TypeError
 
         prog_mae = torch.abs(raw_prog_label - self.decode_progression(reg_score))
         losses[f'reg_mae'] = prog_mae.detach()
-
 
     def forward_test(self, imgs, raw_progression=None):
         """Defines the computation performed at every call when evaluation and testing."""
@@ -125,6 +129,10 @@ class APN(nn.Module):
             progression = progression / reg_score.size(-1) * 100
         elif isinstance(self.cls_head, APNRegHead):
             progression = reg_score.sigmoid().squeeze(dim=-1) * 100
+        elif isinstance(self.cls_head, APNDecHead):
+            reg_score = reg_score.softmax(dim=-2).transpose(-1, -2)[..., 1]
+            progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
+            progression = progression / reg_score.size(-1) * 100
         else:
             raise TypeError(f"unsupported apn head: {type(self.cls_head)}")
         return progression
@@ -147,6 +155,7 @@ class APN(nn.Module):
             num_samples=len(next(iter(data_batch.values()))))
 
         return outputs
+
     #
     # def val_step(self, data_batch, optimizer, **kwargs):
     #     results = self.forward(return_loss=False, **data_batch)

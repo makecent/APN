@@ -74,19 +74,6 @@ class APNHead(nn.Module, metaclass=ABCMeta):
 
 @HEADS.register_module()
 class APNClsHead(nn.Module, metaclass=ABCMeta):
-    """Regression head for APN using classification encoding for progression.
-
-    Args:
-        num_stages (int): Number of stages to be predicted.
-        in_channels (int): Number of channels in input feature.
-        loss (dict): Config for building loss.
-            Default: dict(type='CrossEntropyLoss')
-        spatial_type (str): Pooling type in spatial dimension. Default: 'avg'.
-        dropout_ratio (float): Probability of dropout layer. Default: 0.5.
-        kwargs (dict, optional): Any keyword argument to be used to initialize
-            the head.
-    """
-
     def __init__(self,
                  num_classes=20,
                  num_stages=100,
@@ -135,19 +122,6 @@ class APNClsHead(nn.Module, metaclass=ABCMeta):
 
 @HEADS.register_module()
 class APNRegHead(nn.Module, metaclass=ABCMeta):
-    """Regression head for APN using regression.
-
-    Args:
-        num_stages (int): Number of stages to be predicted.
-        in_channels (int): Number of channels in input feature.
-        loss (dict): Config for building loss.
-            Default: dict(type='CrossEntropyLoss')
-        spatial_type (str): Pooling type in spatial dimension. Default: 'avg'.
-        dropout_ratio (float): Probability of dropout layer. Default: 0.5.
-        kwargs (dict, optional): Any keyword argument to be used to initialize
-            the head.
-    """
-
     def __init__(self,
                  num_classes=20,
                  in_channels=2048,
@@ -189,4 +163,52 @@ class APNRegHead(nn.Module, metaclass=ABCMeta):
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
         reg_score = self.reg_fc(x)
+        return cls_score, reg_score
+
+
+@HEADS.register_module()
+class APNDecHead(nn.Module, metaclass=ABCMeta):
+    def __init__(self,
+                 num_classes=20,
+                 num_stages=100,
+                 in_channels=2048,
+                 hid_channels=256,
+                 loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
+                 loss_reg=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
+                 dropout_ratio=0.5,
+                 avg3d=True,
+                 pretrained=None):
+        super().__init__()
+
+        self.num_classes = num_classes
+        self.in_channels = in_channels
+        self.hid_channels = hid_channels
+        self.loss_cls = build_loss(loss_cls)
+        self.loss_reg = build_loss(loss_reg)
+        self.num_stages = num_stages
+        self.dropout_ratio = dropout_ratio
+        self.pretrained = pretrained
+
+        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
+        if self.dropout_ratio > 0:
+            self.dropout = nn.Dropout(p=self.dropout_ratio)
+        else:
+            self.dropout = nn.Identity()
+
+        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
+
+        self.reg_fc = nn.Linear(self.in_channels, 2 * self.num_stages)
+
+    def init_weights(self):
+        kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
+        kaiming_init(self.reg_fc, a=0, nonlinearity='relu', distribution='uniform')
+        if self.pretrained:
+            load_checkpoint(self, self.pretrained)
+
+    def forward(self, x):
+        x = self.avg_pool(x)
+        x = x.view(x.shape[0], -1)
+        x = self.dropout(x)
+        cls_score = self.cls_fc(x)
+        reg_score = self.reg_fc(x).unflatten(dim=-1, unflattened_size=(2, self.num_stages))
         return cls_score, reg_score

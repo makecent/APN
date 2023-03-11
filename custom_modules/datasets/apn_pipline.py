@@ -173,6 +173,16 @@ class LabelToSoft(object):
         results['progression_label'] = soft_prog
         return results
 
+
+@PIPELINES.register_module()
+class LabelToDec(LabelToOrdinal):
+
+    def __call__(self, results):
+        results = super().__call__(results)
+        results['progression_label'] = results['progression_label'].astype('int')
+        return results
+
+
 @BLENDINGS.register_module(force=True)
 class MixupBlendingProg(MixupBlending):
 
