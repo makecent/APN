@@ -210,5 +210,5 @@ class APNDecHead(nn.Module, metaclass=ABCMeta):
         x = x.view(x.shape[0], -1)
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
-        reg_score = self.reg_fc(x).unflatten(dim=-1, unflattened_size=(2, self.num_stages))
+        reg_score = self.reg_fc(x).unflatten(dim=-1, sizes=(2, self.num_stages))
         return cls_score, reg_score
