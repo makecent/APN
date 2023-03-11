@@ -113,7 +113,7 @@ lr_config = dict(policy='Fixed',
 total_epochs = 10
 
 # output settings
-work_dir = './work_dirs/exp/100_apn_r3dsony_8x4_10e_thumos14_rgb/'
+work_dir = './work_dirs/exp/reglossx1e-1_apn_r3dsony_8x4_10e_thumos14_rgb/'
 output_config = dict(out=f'{work_dir}/progressions.pkl')
 
 # testing config
