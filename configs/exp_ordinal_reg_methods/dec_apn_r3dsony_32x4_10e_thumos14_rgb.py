@@ -38,9 +38,8 @@ img_norm_cfg = dict(
 
 train_pipeline = [
     dict(type='FetchStackedFrames', clip_len=clip_len, frame_interval=frame_interval),
-    dict(type='LabelToOrdinal', num_stages=100),
     dict(type='RawFrameDecode'),
-    dict(type='LabelToSoft', num_stages=100),
+    dict(type='LabelToOrdinal', num_stages=100, dtype='int'),
     dict(type='Resize', scale=(224, 224), keep_ratio=False),
     dict(type='Flip', flip_ratio=0.5),
     # dict(type='pytorchvideo.RandAugment'),

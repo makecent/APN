@@ -102,8 +102,9 @@ class FetchGlobalFrames:
 @PIPELINES.register_module()
 class LabelToOrdinal(object):
 
-    def __init__(self, num_stages=100):
+    def __init__(self, num_stages=100, dtype='float32'):
         self.num_stages = num_stages
+        self.dtype = dtype
 
     @staticmethod
     def _get_prog(results):
@@ -114,13 +115,13 @@ class LabelToOrdinal(object):
 
     def __call__(self, results):
         """Convert progression_label to ordinal label. e.g., 0.031 => [1, 1, 1, 0, ...]."""
-        ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype='float32')
+        ordinal_label = np.full(self.num_stages, fill_value=0.0, dtype=self.dtype)
         prog = results['progression_label'] if 'progression_label' in results else self._get_prog(results)
         prog = sum(prog) / len(prog) if isinstance(prog, (list, tuple)) else prog
 
         results['raw_progression'] = round(prog * 100)
         denormalized_prog = round(prog * self.num_stages)
-        ordinal_label[:denormalized_prog] = 1.0
+        ordinal_label[:denormalized_prog] = 1
         results['progression_label'] = ordinal_label
         return results
 
@@ -171,15 +172,6 @@ class LabelToSoft(object):
         cate_prog = int(round(prog * self.num_stages))
         soft_prog = F.softmin((torch.arange(0, self.num_stages + 1) - cate_prog).abs().float().sqrt(), dim=-1)
         results['progression_label'] = soft_prog
-        return results
-
-
-@PIPELINES.register_module()
-class LabelToDec(LabelToOrdinal):
-
-    def __call__(self, results):
-        results = super().__call__(results)
-        results['progression_label'] = results['progression_label'].astype('int')
         return results
 
 
