@@ -178,7 +178,7 @@ class APN(nn.Module):
 class APNGuided(APN):
 
     def forward_train(self, *args, **kwargs):
-        losses = APN.forward_train(*args, **kwargs)
+        losses = APN.forward_train(self, *args, **kwargs)
         reg_loss, cls_loss = losses['loss_reg'].clone().detach(), losses['loss_cls'].clone().detach()
         g_factor = cls_loss / reg_loss
         losses['loss_reg'] *= g_factor
