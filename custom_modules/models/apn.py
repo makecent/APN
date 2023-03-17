@@ -176,7 +176,7 @@ class APN(nn.Module):
 
 @LOCALIZERS.register_module()
 class APNGuided(APN):
-    @auto_fp16()
+
     def forward_train(self, *args, **kwargs):
         losses = APN.forward_train(*args, **kwargs)
         reg_loss, cls_loss = losses['loss_reg'].clone().detach(), losses['loss_cls'].clone().detach()
