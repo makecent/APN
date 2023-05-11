@@ -1,5 +1,5 @@
 # APN
-This is the official repoistory of the paper **"Action Progression Network for Temporal Action Localization in Videos"**. Our model achieves **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner.
+This is the official repoistory of the paper **"Action Progression Network for Temporal Action Localization in Videos"**. Our model achieves **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner. For proof please refer to the 'Appendix_APN_v2.pdf'.
 
 ![apn_framework_v2](https://user-images.githubusercontent.com/42603768/167289156-e1748bc1-a8e1-4bcf-93f8-2ae0e2dc4d99.png)
 
