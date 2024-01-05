@@ -10,10 +10,9 @@ This is the official repoistory of the paper **[Progression-Guided Temporal Acti
 conda create -n open-mmlab -y
 conda activate open-mmlab
 conda install pytorch torchvision -c pytorch
-pip install openmim
-mim install mmaction2
 conda install pandas h5py scipy
-pip install future tensorboard
+pip install openmim future tensorboard future timm pytorchvideo
+mim install mmengine mmaction2 mmdet 
 ```
 
 # Prepare Data
