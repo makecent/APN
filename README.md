@@ -1,5 +1,5 @@
 # APN
-This is the official repoistory of the paper **"Action Progression Network for Temporal Action Localization in Videos"**. Our model achieves **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner. For proof please refer to the 'Appendix_APN_v2.pdf'.
+This is the official repoistory of the paper **[Progression-Guided Temporal Action Detection in Videos](https://arxiv.org/abs/2308.09268)**. Our model achieves **58\% mAP@0.5** on THUMOS14 in **end-to-end** manner.
 
 ![apn_framework_v2](https://user-images.githubusercontent.com/42603768/167289156-e1748bc1-a8e1-4bcf-93f8-2ae0e2dc4d99.png)
 
@@ -74,3 +74,14 @@ test.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow
 
 # Acknowledgement
 Our code is based on the [MMAction2](https://github.com/open-mmlab/mmaction2).
+
+# Citation
+If you find our work useful, please cite:
+```latex
+@article{lu2023progression,
+  title={Progression-Guided Temporal Action Detection in Videos},
+  author={Lu, Chongkai and Mak, Man-Wai and Li, Ruimin and Chi, Zheru and Fu, Hong},
+  journal={arXiv preprint arXiv:2308.09268},
+  year={2023}
+}
+```
