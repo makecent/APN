@@ -1,10 +1,11 @@
 import math
 import os
-import torch
+
 import numpy as np
-from mmcv.runner import load_checkpoint, BaseModule
-from mmaction.models.builder import BACKBONES
-from mmaction.utils import get_root_logger
+import torch
+from mmengine.model import BaseModule
+from mmaction.registry import MODELS
+
 
 def get_padding_shape(filter_shape, stride, mod=0):
     """Fetch a tuple describing the input padding shape.
@@ -13,6 +14,7 @@ def get_padding_shape(filter_shape, stride, mod=0):
     by the stride.
     See https://stackoverflow.com/a/49842071 for explanation of TF SAME padding logic
     """
+
     def _pad_top_bottom(filter_dim, stride_val, mod):
         if mod:
             pad_along = max(filter_dim - mod, 0)
@@ -191,7 +193,7 @@ class Mixed(torch.nn.Module):
         return out
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class ResNet3d_sony(BaseModule):
     def __init__(self,
                  modality='rgb',
@@ -256,7 +258,6 @@ class ResNet3d_sony(BaseModule):
         self.mixed_5b = Mixed(832, [256, 160, 320, 32, 128, 128])
         self.mixed_5c = Mixed(832, [384, 192, 384, 48, 128, 128])
 
-
     def forward(self, inp):
         # Preprocessing
         out = self.conv3d_1a_7x7(inp)
@@ -284,19 +285,6 @@ class ResNet3d_sony(BaseModule):
         # out_logits = out
         # out = self.softmax(out_logits)
         return out
-
-    # def init_weights(self):
-    #     """Initiate the parameters either from existing checkpoint or from
-    #     scratch."""
-    #     if isinstance(self.pretrained, str):
-    #         logger = get_root_logger()
-    #         logger.info(f'load model from: {self.pretrained}')
-    #         load_checkpoint(self, self.pretrained, strict=False, logger=logger)
-    #
-    #     elif self.pretrained is None:
-    #         pass
-    #     else:
-    #         raise TypeError('pretrained must be a str or None')
 
     def load_tf_weights(self, sess):
         state_dict = {}

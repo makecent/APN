@@ -1,10 +1,10 @@
 import torch
-from mmaction.models.builder import LOSSES
+from mmaction.registry import MODELS
 from mmaction.models.losses import BaseWeightedLoss
 from torch.nn import functional as F
 
 
-@LOSSES.register_module(force=True)
+@MODELS.register_module(force=True)
 class L1LossWithLogits(BaseWeightedLoss):
 
     def _forward(self, cls_score, label, **kwargs):
@@ -13,7 +13,7 @@ class L1LossWithLogits(BaseWeightedLoss):
         return loss_cls
 
 
-@LOSSES.register_module(force=True)
+@MODELS.register_module(force=True)
 class L2LossWithLogits(BaseWeightedLoss):
 
     def _forward(self, cls_score, label, **kwargs):
@@ -22,7 +22,7 @@ class L2LossWithLogits(BaseWeightedLoss):
         return loss_cls
 
 
-@LOSSES.register_module(force=True)
+@MODELS.register_module(force=True)
 class KLDIVLossWithLogits(BaseWeightedLoss):
 
     def _forward(self, cls_score, label, **kwargs):
@@ -31,7 +31,7 @@ class KLDIVLossWithLogits(BaseWeightedLoss):
         return loss_cls
 
 
-@LOSSES.register_module(force=True)
+@MODELS.register_module(force=True)
 class CrossEntropyLossV2(BaseWeightedLoss):
     """Cross Entropy Loss.
     Support two kinds of labels and their corresponding loss type. It's worth
@@ -82,7 +82,7 @@ class CrossEntropyLossV2(BaseWeightedLoss):
         return loss_cls
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class BCELossWithLogitsV2(BaseWeightedLoss):
     """Binary Cross Entropy Loss with logits.
 
@@ -132,7 +132,7 @@ class BCELossWithLogitsV2(BaseWeightedLoss):
         return loss_cls
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class FocalLoss(BaseWeightedLoss):
     def __init__(self, gamma=2.0, alpha=0.25, do_onehot=True, label_smoothing=0.0, *args, **kwargs):
         super().__init__(*args, **kwargs)

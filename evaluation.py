@@ -1,7 +1,8 @@
 import argparse
-from mmcv import Config, load, DictAction
-from mmaction.datasets import build_dataset
 import os
+
+from mmaction.registry import DATASETS
+from mmengine import Config, load, DictAction
 
 
 def parse_args():
@@ -22,22 +23,22 @@ def evaluate_results(cfg_file="configs/apn_mvit_16x8_10e_thumos14_rgb.py",
         results_file = f"work_dirs/{run_name}/progressions.pkl"
     results = load(results_file)
     cfg = Config.fromfile(cfg_file)
-    ds = build_dataset(cfg.data.test)
+    ds = DATASETS.build(cfg.data.test)
 
     # Compute mAP
     # metric_options = cfg.eval_config.metric_options
     metric_config = Config(dict(
-                     mAP=dict(
-                         iou_thr=0.5,
-                         search=dict(
-                             min_e=60,
-                             max_s=40,
-                             min_L=60,
-                             method='mse'),
-                         nms=dict(
-                             score_thr=0,
-                             max_per_video=-1,
-                             nms=dict(iou_thr=0.4)))))
+        mAP=dict(
+            iou_thr=0.5,
+            search=dict(
+                min_e=60,
+                max_s=40,
+                min_L=60,
+                method='mse'),
+            nms=dict(
+                score_thr=0,
+                max_per_video=-1,
+                nms=dict(iou_thr=0.4)))))
     cfg_metric_options = cfg.get('eval_config', {}).get('metric_options', {})
     if cfg_metric_options:
         metric_config.merge_from_dict(cfg_metric_options)

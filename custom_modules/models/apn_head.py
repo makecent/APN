@@ -4,12 +4,12 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from mmcv.cnn import kaiming_init
-from mmcv.runner import load_checkpoint
-from mmaction.models.builder import HEADS, build_loss
+from mmengine.runner import load_checkpoint
+from mmengine.model import kaiming_init
+from mmaction.registry import MODELS
 
 
-@HEADS.register_module()
+@MODELS.register_module()
 class APNHead(nn.Module, metaclass=ABCMeta):
     """Regression head for APN.
 
@@ -39,8 +39,8 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         self.num_classes = num_classes
         self.in_channels = in_channels
         self.hid_channels = hid_channels
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_reg = build_loss(loss_reg)
+        self.loss_cls = MODELS.build(loss_cls)
+        self.loss_reg = MODELS.build(loss_reg)
         self.num_stages = num_stages
         self.dropout_ratio = dropout_ratio
         self.pretrained = pretrained
@@ -69,146 +69,4 @@ class APNHead(nn.Module, metaclass=ABCMeta):
         x = self.dropout(x)
         cls_score = self.cls_fc(x)
         reg_score = self.coral_fc(x) + self.coral_bias
-        return cls_score, reg_score
-
-
-@HEADS.register_module()
-class APNClsHead(nn.Module, metaclass=ABCMeta):
-    def __init__(self,
-                 num_classes=20,
-                 num_stages=100,
-                 in_channels=2048,
-                 hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 loss_reg=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 dropout_ratio=0.5,
-                 avg3d=True,
-                 pretrained=None):
-        super().__init__()
-
-        self.num_classes = num_classes
-        self.in_channels = in_channels
-        self.hid_channels = hid_channels
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_reg = build_loss(loss_reg)
-        self.num_stages = num_stages
-        self.dropout_ratio = dropout_ratio
-        self.pretrained = pretrained
-
-        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
-        if self.dropout_ratio > 0:
-            self.dropout = nn.Dropout(p=self.dropout_ratio)
-        else:
-            self.dropout = nn.Identity()
-
-        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
-
-        self.reg_fc = nn.Linear(self.in_channels, self.num_stages + 1)
-
-    def init_weights(self):
-        kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
-        kaiming_init(self.reg_fc, a=0, nonlinearity='relu', distribution='uniform')
-        if self.pretrained:
-            load_checkpoint(self, self.pretrained)
-
-    def forward(self, x):
-        x = self.avg_pool(x)
-        x = x.view(x.shape[0], -1)
-        x = self.dropout(x)
-        cls_score = self.cls_fc(x)
-        reg_score = self.reg_fc(x)
-        return cls_score, reg_score
-
-
-@HEADS.register_module()
-class APNRegHead(nn.Module, metaclass=ABCMeta):
-    def __init__(self,
-                 num_classes=20,
-                 in_channels=2048,
-                 hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 loss_reg=dict(type='L1LossWithLogits'),
-                 dropout_ratio=0.5,
-                 avg3d=True,
-                 pretrained=None):
-        super().__init__()
-
-        self.num_classes = num_classes
-        self.in_channels = in_channels
-        self.hid_channels = hid_channels
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_reg = build_loss(loss_reg)
-        self.dropout_ratio = dropout_ratio
-        self.pretrained = pretrained
-
-        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
-        if self.dropout_ratio > 0:
-            self.dropout = nn.Dropout(p=self.dropout_ratio)
-        else:
-            self.dropout = nn.Identity()
-
-        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
-
-        self.reg_fc = nn.Linear(self.in_channels, 1)
-
-    def init_weights(self):
-        kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
-        kaiming_init(self.reg_fc, a=0, nonlinearity='relu', distribution='uniform')
-        if self.pretrained:
-            load_checkpoint(self, self.pretrained)
-
-    def forward(self, x):
-        x = self.avg_pool(x)
-        x = x.view(x.shape[0], -1)
-        x = self.dropout(x)
-        cls_score = self.cls_fc(x)
-        reg_score = self.reg_fc(x)
-        return cls_score, reg_score
-
-
-@HEADS.register_module()
-class APNDecHead(nn.Module, metaclass=ABCMeta):
-    def __init__(self,
-                 num_classes=20,
-                 num_stages=100,
-                 in_channels=2048,
-                 hid_channels=256,
-                 loss_cls=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 loss_reg=dict(type='CrossEntropyLossV2', label_smoothing=0.1),
-                 dropout_ratio=0.5,
-                 avg3d=True,
-                 pretrained=None):
-        super().__init__()
-
-        self.num_classes = num_classes
-        self.in_channels = in_channels
-        self.hid_channels = hid_channels
-        self.loss_cls = build_loss(loss_cls)
-        self.loss_reg = build_loss(loss_reg)
-        self.num_stages = num_stages
-        self.dropout_ratio = dropout_ratio
-        self.pretrained = pretrained
-
-        self.avg_pool = nn.AdaptiveAvgPool3d((1, 1, 1)) if avg3d else nn.Identity()
-        if self.dropout_ratio > 0:
-            self.dropout = nn.Dropout(p=self.dropout_ratio)
-        else:
-            self.dropout = nn.Identity()
-
-        self.cls_fc = nn.Linear(self.in_channels, self.num_classes)
-
-        self.reg_fc = nn.Linear(self.in_channels, 2 * self.num_stages)
-
-    def init_weights(self):
-        kaiming_init(self.cls_fc, a=0, nonlinearity='relu', distribution='uniform')
-        kaiming_init(self.reg_fc, a=0, nonlinearity='relu', distribution='uniform')
-        if self.pretrained:
-            load_checkpoint(self, self.pretrained)
-
-    def forward(self, x):
-        x = self.avg_pool(x)
-        x = x.view(x.shape[0], -1)
-        x = self.dropout(x)
-        cls_score = self.cls_fc(x)
-        reg_score = self.reg_fc(x).unflatten(dim=-1, sizes=(2, self.num_stages))
         return cls_score, reg_score

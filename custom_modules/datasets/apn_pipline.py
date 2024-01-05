@@ -5,17 +5,16 @@ import warnings
 import mmcv
 import numpy as np
 import torch
-from mmaction.datasets import BLENDINGS, MixupBlending, CutmixBlending
-from mmaction.datasets.builder import PIPELINES
-from mmaction.datasets.pipelines import SampleFrames, RawFrameDecode
-from mmaction.datasets.pipelines import ThreeCrop as _ThreeCrop
-from mmaction.datasets.pipelines.augmentations import _init_lazy_if_proper
-from mmcv.fileio import FileClient
-from mmcv.utils import build_from_cfg
+from mmaction.models import MixupBlending, CutmixBlending
+from mmaction.registry import TRANSFORMS, MODELS
+from mmaction.datasets.transforms import SampleFrames, RawFrameDecode
+from mmaction.datasets.transforms import ThreeCrop as _ThreeCrop
+from mmaction.datasets.transforms.processing import _init_lazy_if_proper
+from mmengine import FileClient
 from torch.nn import functional as F
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class FetchStackedFrames(object):
 
     def __init__(self,
@@ -56,7 +55,7 @@ class FetchStackedFrames(object):
         return results
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class SampleActionFrames(SampleFrames):
 
     def __call__(self, results):
@@ -74,7 +73,7 @@ class SampleActionFrames(SampleFrames):
         return results
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class FetchGlobalFrames:
     def __init__(self, sample_range=640, *args, **kwargs):
         self.sample_range = sample_range
@@ -99,7 +98,7 @@ class FetchGlobalFrames:
         return results
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LabelToOrdinal(object):
 
     def __init__(self, num_stages=100, dtype='float32'):
@@ -126,7 +125,7 @@ class LabelToOrdinal(object):
         return results
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LabelToCls(object):
 
     def __init__(self, num_stages=100):
@@ -150,7 +149,7 @@ class LabelToCls(object):
         return results
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class LabelToSoft(object):
 
     def __init__(self, num_stages=100):
@@ -175,7 +174,7 @@ class LabelToSoft(object):
         return results
 
 
-@BLENDINGS.register_module(force=True)
+@MODELS.register_module(force=True)
 class MixupBlendingProg(MixupBlending):
 
     def __call__(self, imgs, class_label, progression_label):
@@ -198,7 +197,7 @@ class MixupBlendingProg(MixupBlending):
         return mixed_imgs, mixed_class_label, mixed_prog_label
 
 
-@BLENDINGS.register_module(force=True)
+@MODELS.register_module(force=True)
 class CutmixBlendingProg(CutmixBlending):
 
     def __call__(self, imgs, class_label, progression_label):
@@ -246,7 +245,7 @@ class CutmixBlendingProg(CutmixBlending):
         return imgs, mixed_class_label, mixed_prog_label
 
 
-@BLENDINGS.register_module()
+@MODELS.register_module()
 class BatchAugBlendingProg:
     """Implementing
         https://openaccess.thecvf.com/content_CVPR_2020/papers/Hoffer_Augment_Your_Batch_Improving_Generalization_Through_Instance_Repetition_CVPR_2020_paper.pdf
@@ -256,7 +255,7 @@ class BatchAugBlendingProg:
     def __init__(self,
                  blendings=(dict(type='MixupBlendingProg', num_classes=200, alpha=.8),
                             dict(type='CutmixBlendingProg', num_classes=200, alpha=1.))):
-        self.blendings = [build_from_cfg(bld, BLENDINGS) for bld in blendings]
+        self.blendings = [MODELS.build(bld) for bld in blendings]
 
     def __call__(self, imgs, class_label, progression_label):
         repeated_imgs = []
@@ -271,7 +270,7 @@ class BatchAugBlendingProg:
         return torch.cat(repeated_imgs), torch.cat(repeated_cls_label), torch.cat(repeated_prog_label)
 
 
-@BLENDINGS.register_module()
+@MODELS.register_module()
 class BatchAugBlending:
     """Implementing
         https://openaccess.thecvf.com/content_CVPR_2020/papers/Hoffer_Augment_Your_Batch_Improving_Generalization_Through_Instance_Repetition_CVPR_2020_paper.pdf
@@ -281,7 +280,7 @@ class BatchAugBlending:
     def __init__(self,
                  blendings=(dict(type='MixupBlendingProg', num_classes=200, alpha=.8),
                             dict(type='CutmixBlendingProg', num_classes=200, alpha=1.))):
-        self.blendings = [build_from_cfg(bld, BLENDINGS) for bld in blendings]
+        self.blendings = [MODELS.build(bld) for bld in blendings]
 
     def __call__(self, imgs, class_label):
         repeated_imgs = []
@@ -294,7 +293,7 @@ class BatchAugBlending:
         return torch.cat(repeated_imgs), torch.cat(repeated_cls_label)
 
 
-@PIPELINES.register_module(force=True)
+@TRANSFORMS.register_module(force=True)
 class ThreeCrop(_ThreeCrop):
     """
     Support short-side center crop now;
@@ -353,7 +352,7 @@ class ThreeCrop(_ThreeCrop):
         return repr_str
 
 
-@PIPELINES.register_module()
+@TRANSFORMS.register_module()
 class ConcateFlowDecode(RawFrameDecode):
     def __call__(self, results):
         mmcv.use_backend(self.decoding_backend)

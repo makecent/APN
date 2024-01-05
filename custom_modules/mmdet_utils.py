@@ -3,8 +3,8 @@
 import torch
 from multiprocessing import Pool
 import numpy as np
-from mmdet.core.evaluation.mean_ap import (average_precision,
-                                           print_map_summary, tpfp_imagenet)
+from mmdet.evaluation import average_precision, print_map_summary
+from mmdet.evaluation.functional.mean_ap import tpfp_imagenet
 
 INF = 1e8
 

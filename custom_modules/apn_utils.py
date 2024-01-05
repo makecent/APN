@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from mmaction.core.evaluation.accuracy import pairwise_temporal_iou, interpolated_precision_recall
+from mmaction.evaluation import pairwise_temporal_iou, interpolated_precision_recall
 
 from custom_modules.mmdet_utils import multiclass_nms
 from matplotlib import pyplot as plt

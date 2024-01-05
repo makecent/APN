@@ -1,16 +1,11 @@
-import torch
-from torch import nn
-from torch.nn import functional as F
-
-from mmaction.models.builder import LOCALIZERS, build_backbone, build_head
+from mmaction.evaluation import top_k_accuracy
 from mmaction.models.recognizers import BaseRecognizer
-from mmaction.core import top_k_accuracy
-from ..apn_utils import binary_accuracy, progression_mae
+from mmaction.registry import MODELS
+
 from .apn_head import *
-from mmcv.runner import auto_fp16
 
 
-@LOCALIZERS.register_module()
+@MODELS.register_module()
 class APN(nn.Module):
     """APN model framework."""
 
@@ -20,22 +15,17 @@ class APN(nn.Module):
                  train_cfg=None,
                  test_cfg=None):
         super().__init__()
-        self.backbone = build_backbone(backbone)
-        self.cls_head = build_head(cls_head)  # just for compatibility, both cls and loc heads are in it.
+        self.backbone = MODELS.build(backbone)
+        self.cls_head = MODELS.build(cls_head)  # use name cls_head just for compatibility, should be dec_head
         self.init_weights()
-        self.fp16_enabled = False
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
+
+        # Blending refers to technique that mixes data in the mini-batch, e.g. mixup, cutmix, etc.
         if train_cfg is not None and 'blending' in train_cfg:
-            from mmcv.utils import build_from_cfg
-            from mmaction.datasets.builder import BLENDINGS
-            self.blending = build_from_cfg(train_cfg['blending'], BLENDINGS)
+            self.blending = MODELS.build(train_cfg['blending'])
         else:
             self.blending = None
-        if test_cfg is not None and 'feature_extraction' in test_cfg:
-            self.feature_extraction = True
-        else:
-            self.feature_extraction = False
 
     def init_weights(self):
         """Weight initialization for model."""
@@ -51,7 +41,6 @@ class APN(nn.Module):
 
         return output
 
-    @auto_fp16()
     def forward_train(self, imgs, progression_label=None, class_label=None):
         hard_class_label = class_label
 
@@ -76,24 +65,9 @@ class APN(nn.Module):
         return losses
 
     def training_metric(self, losses, reg_score, progression_label):
-        if isinstance(self.cls_head, APNHead):
-            reg_acc = torch.count_nonzero((reg_score > 0) == progression_label) / progression_label.numel()
-            losses[f'reg_acc'] = reg_acc.detach().float()
-            raw_prog_label = torch.count_nonzero(progression_label > 0.5, dim=-1) / progression_label.size(-1) * 100
-        elif isinstance(self.cls_head, APNClsHead):
-            reg_acc = torch.count_nonzero(reg_score.argmax(dim=-1) == progression_label.argmax(dim=-1)) / \
-                      reg_score.shape[0]
-            losses[f'reg_acc'] = reg_acc.detach().float()
-            raw_prog_label = torch.argmax(progression_label, dim=-1).float() / (progression_label.size(-1) - 1) * 100
-        elif isinstance(self.cls_head, APNRegHead):
-            raw_prog_label = progression_label * 100
-        elif isinstance(self.cls_head, APNDecHead):
-            reg_acc = torch.count_nonzero(reg_score.argmax(dim=1) == progression_label) / progression_label.numel()
-            losses[f'reg_acc'] = reg_acc.detach().float()
-            raw_prog_label = torch.count_nonzero(progression_label > 0.5, dim=-1) / progression_label.size(-1) * 100
-        else:
-            raise TypeError
-
+        reg_acc = torch.count_nonzero((reg_score > 0) == progression_label) / progression_label.numel()
+        losses[f'reg_acc'] = reg_acc.detach().float()
+        raw_prog_label = torch.count_nonzero(progression_label > 0.5, dim=-1) / progression_label.size(-1) * 100
         prog_mae = torch.abs(raw_prog_label - self.decode_progression(reg_score))
         losses[f'reg_mae'] = prog_mae.detach()
 
@@ -115,26 +89,9 @@ class APN(nn.Module):
             return list(zip(cls_score.detach().cpu().numpy(), progression.detach().cpu().numpy()))
 
     def decode_progression(self, reg_score):
-        if isinstance(self.cls_head, APNHead):
-            reg_score = reg_score.sigmoid()
-            progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
-            progression = progression / reg_score.size(-1) * 100
-        elif isinstance(self.cls_head, APNClsHead):
-            reg_score = reg_score.softmax(dim=-1)
-            # # argmax
-            # progression = torch.argmax(reg_score, dim=-1).float()
-            # progression = progression / reg_score.size(-1) * 100
-            # expectation
-            progression = (reg_score * torch.arange(0, reg_score.size(-1)).type_as(reg_score)).sum(dim=-1)
-            progression = progression / reg_score.size(-1) * 100
-        elif isinstance(self.cls_head, APNRegHead):
-            progression = reg_score.sigmoid().squeeze(dim=-1) * 100
-        elif isinstance(self.cls_head, APNDecHead):
-            reg_score = reg_score.softmax(dim=-2).transpose(-1, -2)[..., 1]
-            progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
-            progression = progression / reg_score.size(-1) * 100
-        else:
-            raise TypeError(f"unsupported apn head: {type(self.cls_head)}")
+        reg_score = reg_score.sigmoid()
+        progression = torch.count_nonzero(reg_score > 0.5, dim=-1)
+        progression = progression / reg_score.size(-1) * 100
         return progression
 
     def forward(self, *args, return_loss=True, **kwargs):
@@ -156,13 +113,6 @@ class APN(nn.Module):
 
         return outputs
 
-    #
-    # def val_step(self, data_batch, optimizer, **kwargs):
-    #     results = self.forward(return_loss=False, **data_batch)
-    #     outputs = dict(results=results)
-    #
-    #     return outputs
-
     def feature_extract(self, imgs, img_metas=None):
         batch_size, num_segs = imgs.shape[:2]
         imgs = imgs.reshape((-1,) + imgs.shape[2:])
@@ -172,17 +122,3 @@ class APN(nn.Module):
             feat = feat.reshape((batch_size, num_segs, -1))
             feat = feat.mean(axis=1)
         return feat.detach().cpu().numpy()
-
-
-@LOCALIZERS.register_module()
-class APNGuided(APN):
-
-    def forward_train(self, *args, **kwargs):
-        losses = APN.forward_train(self, *args, **kwargs)
-        reg_loss, cls_loss = losses['loss_reg'].clone().detach(), losses['loss_cls'].clone().detach()
-        g_factor = cls_loss / reg_loss
-        losses['loss_reg'] *= g_factor
-        # g_factor = reg_loss / cls_loss
-        # losses['loss_cls'] *= g_factor
-
-        return losses

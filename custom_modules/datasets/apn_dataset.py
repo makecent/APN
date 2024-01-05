@@ -4,11 +4,10 @@ from itertools import repeat
 from multiprocessing import cpu_count
 from collections import OrderedDict
 import numpy as np
-from mmaction.core import top_k_accuracy
-from mmaction.datasets.builder import DATASETS
-from mmaction.datasets.pipelines import Compose
-from mmcv import dump, track_parallel_progress
-from mmcv.utils import print_log
+from mmaction.evaluation import top_k_accuracy
+from mmaction.registry import DATASETS
+from mmengine.dataset import Compose
+from mmengine import print_log, dump, track_parallel_progress
 from torch.utils.data import Dataset
 from warnings import warn
 
