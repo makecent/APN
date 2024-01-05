@@ -58,9 +58,9 @@ APN
 + Some wrong annotated videos are removed.
 
 # Training
-
+**Let's take as example the implementation of APN on THUMOS14 of optical flow using I3D as backbone with resolution of (32 frames x 4 stride):**
 ```shell
-train.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow 2
+train.sh configs/localization/apn/apn_r3dsony_32x4_10e_thumos14_flow 2
 ```
 \*replace the `2` with the number of GPUs you want use.
 
@@ -68,7 +68,7 @@ train.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flo
 After the training finished, you may use the below command to test the trained checkpoint.
 
 ```shell
-test.sh configs/localization/apn/apn_coral+random_r3dsony_32x4_10e_thumos14_flow.py work_dirs/apn_coral+random_r3dsony_32x4_10e_thumos14_flow/latest.pth 2
+test.sh configs/localization/apn/apn_r3dsony_32x4_10e_thumos14_flow.py work_dirs/apn_r3dsony_32x4_10e_thumos14_flow/latest.pth 2
 ```
 \*replace the `2` with the number of GPUs you want use.
 
